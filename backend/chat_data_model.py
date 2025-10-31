@@ -6,7 +6,6 @@ from shared.utils import _to_json_primitive
 from shared.utils import get_user_id
 # Global variables that will be set by the main app
 db = None
-ChatHistory = None
 Threads = None
 Runs = None
 Users = None
@@ -16,7 +15,7 @@ ChatHistoryManager = None
 
 def init_chat_db(database):
     """Initialize the database reference and create models"""
-    global db, ChatHistory, Threads, Runs, Users, ToolCalls, ToolDefinition, ChatHistoryManager, AgentDefinition
+    global db, Threads, Runs, Users, ToolCalls, ToolDefinition, ChatHistoryManager, AgentDefinition
     db = database
 
     # Helper function to convert model instances to dictionaries
@@ -108,35 +107,6 @@ def init_chat_db(database):
         def to_dict(self):
             return to_dict_helper(self)
 
-    class ChatHistory(db.Model):
-        __tablename__ = 'chat_history'
-        message_id = db.Column(db.String(255), primary_key=True, default=lambda: f"msg_{uuid.uuid4()}")
-        session_id = db.Column(db.BigInteger, db.ForeignKey('threads.thread_id'))
-        trace_id = db.Column(db.String(255), nullable=False)
-        user_id = db.Column(db.String(255), nullable=False)
-        agent_id = db.Column(db.BigInteger, nullable=True)
-        message_type = db.Column(db.String(50), nullable=False)  # 'human', 'ai', 'system', 'tool_call', 'tool_result'
-        content = db.Column(db.Text)
-
-        model_name = db.Column(db.String(255))
-        content_filter_results = db.Column(db.JSON)
-        total_tokens = db.Column(db.Integer)
-        completion_tokens = db.Column(db.Integer)
-        prompt_tokens = db.Column(db.Integer)
-
-        tool_id = db.Column(db.String(255))
-        tool_name = db.Column(db.String(255))
-        tool_input = db.Column(db.JSON)
-        tool_output = db.Column(db.JSON) 
-        tool_call_id = db.Column(db.String(255))
-    
-        finish_reason = db.Column(db.String(255))
-        response_time_ms = db.Column(db.Integer)
-        trace_end = db.Column(db.DateTime, default=datetime.now())
-
-        def to_dict(self):
-            return to_dict_helper(self)
-
     # --- Chat History Management Class ---
     class ChatHistoryManager:
         def __init__(self, session_id: str, user_id: str = 'user_1'):
@@ -182,73 +152,22 @@ def init_chat_db(database):
             return res
         def add_human_message(self, message: dict, trace_id: str):
             """Add the human message to chat history"""
-            entry_message = ChatHistory(
-                session_id=self.session_id,
-                user_id=self.user_id,
-                trace_id=trace_id,
-                message_id = str(uuid.uuid4()),
-                message_type="human",
-                content=message['content'],
-            )
-            db.session.add(entry_message)
-            db.session.commit()
-            print("Human message added to chat history:", message["id"])
-            return entry_message
+            # ChatHistory table removed - method now does nothing
+            print("Human message would be added to chat history:", message["id"])
+            return None
 
         def add_ai_message(self, message: dict, trace_id: str, trace_duration: int):
             """Add the AI agent message to chat history"""
-            agent_id = None
-            if "name" in message:
-                agent_id = db.session.query(AgentDefinition.agent_id).filter_by(name=message["name"]).scalar()
-            entry_message = ChatHistory(
-                session_id=self.session_id,
-                user_id=self.user_id,
-                agent_id = agent_id,
-                message_id = message["id"],
-                trace_id=trace_id,
-                message_type="ai",
-                content=message["content"],
-                total_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
-                completion_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
-                prompt_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
-                model_name=message.get("response_metadata", {}).get('model_name'),
-                content_filter_results=message.get("response_metadata", {}).get("prompt_filter_results", [{}])[0].get("content_filter_results"),
-                finish_reason=message.get("response_metadata", {}).get("finish_reason"),
-                response_time_ms=trace_duration,
-            )
-            db.session.add(entry_message)
-            db.session.commit()
-            print("AI message added to chat history:", message["id"])
-            return entry_message
+            # ChatHistory table removed - method now does nothing
+            print("AI message would be added to chat history:", message["id"])
+            return None
 
         def add_tool_call_message(self, message: dict, trace_id: str):
             """Log a tool call"""
-            agent_id = None
-            if "name" in message:
-                agent_id = db.session.query(AgentDefinition.agent_id).filter_by(name=message["name"]).scalar()
             tool_name = message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('function', {}).get("name")
             tool_id = db.session.query(ToolDefinition.tool_id).filter_by(name=tool_name).scalar()
-
-            entry_message = ChatHistory(
-                session_id=self.session_id,
-                user_id=self.user_id,
-                agent_id=agent_id,
-                trace_id=trace_id,
-                message_type='tool_call',
-                tool_id = tool_id,
-                tool_call_id=message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('id'),
-                tool_name=tool_name,
-                total_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
-                completion_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
-                prompt_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
-                tool_input=message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('function', {}).get("arguments"),
-                model_name=message.get("response_metadata", {}).get('model_name'),
-                content_filter_results=message.get("response_metadata", {}).get("prompt_filter_results", [{}])[0].get("content_filter_results"),
-                finish_reason=message.get("response_metadata", {}).get("finish_reason"),
-            )
-            db.session.add(entry_message)
-            db.session.commit()
-            print("Tool call message added to chat history:", message["id"])
+            
+            print("Tool call message would be added to chat history:", message["id"])
             return {"tool_call_id": message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('id'),
                     "tool_id": tool_id, "tool_name": tool_name,
                     "tool_input": message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('function', {}).get("arguments"),
@@ -256,23 +175,8 @@ def init_chat_db(database):
 
         def add_tool_result_message(self, message: dict, trace_id: str):
             """Log a tool result"""
-            tool_name = message["name"]
-            tool_id = db.session.query(ToolDefinition.tool_id).filter_by(name=tool_name).scalar()
-            entry_message = ChatHistory(
-                session_id=self.session_id,
-                user_id=self.user_id,
-                message_id=message["id"],
-                tool_id=tool_id,
-                tool_call_id=message["tool_call_id"],
-                trace_id=trace_id,
-                tool_name=message["name"],
-                message_type='tool_result',
-                content="",
-                tool_output=message["content"],
-            )
-            db.session.add(entry_message)
-            db.session.commit()
-            print("Tool result message added to chat history:", message["id"])
+            # ChatHistory table removed - method now does nothing
+            print("Tool result message would be added to chat history:", message["id"])
             return {"tool_output": message["content"], "status": message["status"]}
         
         def update_session_timestamp(self):
@@ -327,15 +231,10 @@ def init_chat_db(database):
 
         def get_conversation_history(self, limit: int = 50):
             """Retrieve conversation history for this session"""
-            messages = db.session.query(ChatHistory.trace_id, ChatHistory.message_type, ChatHistory.content, ChatHistory.trace_end).filter_by(
-                session_id=self.session_id
-            ).order_by(ChatHistory.trace_end.desc()).limit(limit).all()
-            
-            # Note: messages will be tuples, not model objects, so you'll need to handle differently
-            return [{"trace_id": msg[0], "message_type": msg[1], "content": msg[2], "trace_end": msg[3]} for msg in reversed(messages)]
+            # ChatHistory table removed - return empty list
+            return []
 
     # Make classes available globally in this module
-    globals()['ChatHistory'] = ChatHistory
     globals()['Threads'] = Threads
     globals()['Runs'] = Runs
     globals()['Users'] = Users
@@ -370,7 +269,6 @@ def clear_chat_history():
     try:
         # Delete in order to respect foreign key constraints
         ToolCalls.query.delete()
-        ChatHistory.query.delete()
         Threads.query.delete()
 
         db.session.commit()
@@ -385,7 +283,6 @@ def clear_session_data(session_id):
     try:
         # Delete in order to respect foreign key constraints
         ToolCalls.query.filter_by(session_id=session_id).delete()
-        ChatHistory.query.filter_by(session_id=session_id).delete()
         Threads.query.filter_by(thread_id=session_id).delete()
         
         db.session.commit()
@@ -400,35 +297,33 @@ def initialize_tool_definitions():
         {
             "name": "get_user_accounts",
             "description": "Retrieves all accounts for a given user",
-            "input_schema": {"type": "object", "properties": {}},
-            "cost_per_call_cents": 0
+            "input_schema": json.dumps({"type": "object", "properties": {}})
         },
         {
             "name": "get_transactions_summary",
             "description": "Provides spending summary with time period and account filters",
-            "input_schema": {
+            "input_schema": json.dumps({
                 "type": "object",
                 "properties": {
                     "time_period": {"type": "string"},
                     "account_name": {"type": "string"}
                 }
-            },
-            "cost_per_call_cents": 0
+            })
         },
         {
             "name": "search_support_documents",
             "description": "Searches knowledge base for customer support answers",
-            "input_schema": {
+            "input_schema": json.dumps({
                 "type": "object",
                 "properties": {"user_question": {"type": "string"}},
                 "required": ["user_question"]
-            },
-            "cost_per_call_cents": 2
+            })
+
         },
         {
             "name": "create_new_account",
             "description": "Creates a new bank account for the user",
-            "input_schema": {
+            "input_schema": json.dumps({
                 "type": "object",
                 "properties": {
                     "account_type": {"type": "string", "enum": ["checking", "savings", "credit"]},
@@ -436,13 +331,12 @@ def initialize_tool_definitions():
                     "balance": {"type": "number"}
                 },
                 "required": ["account_type", "name"]
-            },
-            "cost_per_call_cents": 0
+            })
         },
         {
             "name": "transfer_money",
             "description": "Transfers money between accounts or to external accounts",
-            "input_schema": {
+            "input_schema": json.dumps({
                 "type": "object",
                 "properties": {
                     "from_account_name": {"type": "string"},
@@ -451,8 +345,7 @@ def initialize_tool_definitions():
                     "to_external_details": {"type": "object"}
                 },
                 "required": ["from_account_name", "amount"]
-            },
-            "cost_per_call_cents": 0
+            })
         }
     ]
     
