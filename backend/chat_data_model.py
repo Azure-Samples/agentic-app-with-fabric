@@ -69,7 +69,7 @@ def init_chat_db(database):
         __tablename__ = 'tool_usage'
         tool_call_id = db.Column(db.String(255), primary_key=True, default=lambda: f"tool_{uuid.uuid4()}")
         session_id = db.Column(db.String(255), nullable=False)
-        trace_id = db.Column(db.String(255), db.ForeignKey('chat_history.trace_id'))
+        trace_id = db.Column(db.String(255))
         tool_id = db.Column(db.String(255), db.ForeignKey('tool_definitions.tool_id'), nullable=False)
         tool_name = db.Column(db.String(255), nullable=False)
         tool_input = db.Column(db.JSON, nullable=False)

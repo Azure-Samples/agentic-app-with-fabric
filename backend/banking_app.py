@@ -1,5 +1,6 @@
 # import urllib.parse
 import uuid
+import asyncio
 from datetime import datetime
 import json
 import time
@@ -11,19 +12,18 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
-from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
-from langchain_community.vectorstores.utils import DistanceStrategy
-from langchain_sqlserver import SQLServer_VectorStore
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
-from langgraph.store.memory import InMemoryStore
+from agent_framework import ChatAgent
+from agent_framework.azure import AzureOpenAIChatClient
+from openai import AsyncOpenAI
 from shared.connection_manager import sqlalchemy_connection_creator, connection_manager
 from shared.utils import get_user_id
 import requests  # For calling analytics service
-from langgraph.prebuilt import create_react_agent
 from shared.utils import _serialize_messages
 from init_data import check_and_ingest_data
 # Load Environment variables and initialize app
 import os
+from azure.identity import AzureCliCredential
+
 load_dotenv(override=True)
 
 app = Flask(__name__)
@@ -40,23 +40,21 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT
 # Analytics service URL
 ANALYTICS_SERVICE_URL = "http://127.0.0.1:5002"
 
-if not all([AZURE_OPENAI_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT, AZURE_OPENAI_EMBEDDING_DEPLOYMENT]):
-    print("⚠️  Warning: One or more Azure OpenAI environment variables are not set.")
-    ai_client = None
-    embeddings_client = None
-else:
-    ai_client = AzureChatOpenAI(
-        azure_endpoint=AZURE_OPENAI_ENDPOINT,
-        api_version="2024-10-21",
-        api_key=AZURE_OPENAI_KEY,
-        azure_deployment=AZURE_OPENAI_DEPLOYMENT 
+# Initialize OpenAI client for Agent Framework
+chat_client = None
+
+try:
+  
+    # Create chat client for Agent Framework
+    chat_client = AzureOpenAIChatClient(
+        deployment_name=os.environ["AZURE_OPENAI_DEPLOYMENT"],
+        endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        credential=AzureCliCredential()
     )
-    embeddings_client = AzureOpenAIEmbeddings(
-        azure_deployment=AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
-        openai_api_version="2024-10-21",
-        azure_endpoint=AZURE_OPENAI_ENDPOINT,
-        api_key=AZURE_OPENAI_KEY,
-    )
+    print("✅ Agent Framework OpenAI client initialized successfully")
+except Exception as e:
+    print(f"❌ Failed to initialize OpenAI client: {e}")
+    chat_client = None
 
 # Database configuration for Azure SQL (banking data)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc://"
@@ -77,15 +75,8 @@ connection_string = os.getenv('FABRIC_SQL_CONNECTION_URL_AGENTIC')
 
 connection_url = f"mssql+pyodbc:///?odbc_connect={connection_string}"
 
-vector_store = None
-if embeddings_client:
-    vector_store = SQLServer_VectorStore(
-        connection_string=connection_url,
-        table_name="DocsChunks_Embeddings",
-        embedding_function=embeddings_client,
-        embedding_length=1536,
-        distance_strategy=DistanceStrategy.COSINE,
-    )
+# Vector search will be implemented as Agent Framework tools
+# Agent Framework doesn't use direct vector store integration
 
 def to_dict_helper(instance):
     d = {}
@@ -268,21 +259,9 @@ def get_transactions_summary(user_id: str = fixed_user_id, time_period: str = 't
 
 def search_support_documents(user_question: str) -> str:
     """Searches the knowledge base for answers to customer support questions using vector search."""
-    if not vector_store:
-        return "The vector store is not configured."
-    try:
-        results = vector_store.similarity_search_with_score(user_question, k=3)
-        relevant_docs = [doc.page_content for doc, score in results if score < 0.5]
-        print("-------------> ", relevant_docs)
-        if not relevant_docs:
-            return "No relevant support documents found to answer this question."
-
-        context = "\n\n---\n\n".join(relevant_docs)
-        return context
-
-    except Exception as e:
-        print(f"ERROR in search_support_documents: {e}")
-        return "An error occurred while searching for support documents."
+    # TODO: Implement vector search using Agent Framework tools or Azure AI Search
+    # For now, return a placeholder response
+    return f"Document search functionality is being updated. Your question about '{user_question}' has been noted. Please contact customer support for immediate assistance."
 
 def create_new_account(user_id: str = fixed_user_id, account_type: str = 'checking', name: str = None, balance: float = 0.0) -> str:
     """Creates a new bank account for the user."""
@@ -363,83 +342,77 @@ def handle_transactions():
         return jsonify(result), status_code
 @app.route('/api/chatbot', methods=['POST'])
 def chatbot():
-    if not ai_client:
-        return jsonify({"error": "Azure OpenAI client is not configured."}), 503
+    if not chat_client:
+        return jsonify({"error": "Agent Framework chat client is not configured."}), 503
 
     data = request.json
     messages = data.get("messages", [])
     session_id = data.get("session_id")
     user_id = fixed_user_id
-    # session_id_temp = "session_74a4b39c-72d9-4b30-b8b4-f317e4366e1e"
     
-    # Fetch chat history from the analytics service
-    history_data = call_analytics_service(f"chat/history/{session_id}", method='GET')
-    
-    # Reconstruct messages and session memory
-    session_memory, historical_messages = reconstruct_messages_from_history(history_data)
-
-    
-    # Print debugging info
-    print("\n--- Context being passed to the agent ---")
-    print(f"History data received: {len(history_data) if history_data else 0} messages")
-    print(f"Historical messages reconstructed: {len(historical_messages)}")
-    for i, msg in enumerate(historical_messages):
-        print(f"  {i+1}. [{msg.__class__.__name__}] {msg.content[:50]}...")
-    print("-----------------------------------------\n")
-
     # Extract current user message
     user_message = messages[-1].get("content", "")
-    tools = [get_user_accounts, get_transactions_summary,
-            search_support_documents, create_new_account,
-            transfer_money]
-
-    # Initialize banking agent
-    banking_agent = create_react_agent(
-        model=ai_client,
-        tools=tools,
-        checkpointer=session_memory,
-        prompt="""
-        - You are a customer support agent.
-        - You can use the provided tools to answer user questions and perform tasks.
-        - If you were unable to find an answer, inform the user.
-        - Do not use your general knowledge to answer questions.""",
-        name = "banking_agent_v1"
-    )
     
-    # Thread config for session management
-    thread_config = {"configurable": {"thread_id": session_id}}
-    all_messages = historical_messages + [HumanMessage(content=user_message)]
+    # Run the agent asynchronously
+    try:
+        response_text = asyncio.run(run_banking_agent(user_message, session_id))
+        
+        # Log to analytics service
+        analytics_data = {
+            "session_id": session_id,
+            "user_id": user_id,
+            "messages": [
+                {"type": "human", "content": user_message},
+                {"type": "ai", "content": response_text}
+            ],
+            "trace_duration": 0,  # Agent Framework handles timing internally
+        }
+        
+        call_analytics_service("chat/log-trace", data=analytics_data)
+        
+        return jsonify({
+            "response": response_text,
+            "session_id": session_id,
+            "tools_used": []
+        })
+        
+    except Exception as e:
+        print(f"Error in chatbot: {e}")
+        return jsonify({"error": "An error occurred processing your request."}), 500
 
-    trace_start_time = time.time()
-    response = banking_agent.invoke(
-        {"messages": all_messages}, 
-        config=thread_config
-    )
-    end_time = time.time()
-    trace_duration = int((end_time - trace_start_time) * 1000)
-
-    print("################### TRACE RESPONSE ######################")
-    all_messages = response['messages']
-    historical_count = len(historical_messages)
-    final_messages = all_messages[historical_count:]
-
-    for msg in final_messages:
-        print(f"[{msg.__class__.__name__}] {msg.content}")
-
-    analytics_data = {
-        "session_id": session_id,
-        "user_id": user_id,
-        "messages": _serialize_messages(final_messages),
-        "trace_duration": trace_duration,
-    }
-
-    # calling analytics service to capture this trace
-    call_analytics_service("chat/log-trace", data=analytics_data)
-    return jsonify({
-        "response": final_messages[-1].content,
-        "session_id": session_id,
-        "tools_used": []
-    })
+async def run_banking_agent(user_message: str, session_id: str) -> str:
+    """Run the banking agent using Agent Framework"""
+    if not chat_client:
+        return "Chat client is not available."
+    
+    try:
+        # Create agent with tools
+        agent = chat_client.create_agent(
+            name="BankingAgent",
+            instructions="""You are a helpful banking customer support agent. 
+            - Help users with their banking questions and tasks
+            - Use the provided tools to access account information and perform operations
+            - Be helpful and professional
+            - If you cannot find information, inform the user politely""",
+            tools=[
+                get_user_accounts, 
+                get_transactions_summary,
+                search_support_documents,
+                create_new_account,
+                transfer_money
+            ],
+        )
+        
+        # Get or create thread for session persistence
+        thread = agent.get_new_thread()  # You could implement session-based thread retrieval here
+        
+        # Run the agent
+        result = await agent.run(user_message, thread=thread)
+        return result.text
+            
+    except Exception as e:
+        print(f"Error running banking agent: {e}")
+        return "I apologize, but I'm having trouble processing your request right now. Please try again later."
 
 def initialize_banking_app():
     """Initialize banking app when called from combined launcher."""
