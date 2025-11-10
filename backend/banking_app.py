@@ -31,12 +31,6 @@ CORS(app)
 global fixed_user_id
 fixed_user_id = get_user_id()  # For simplicity, using a fixed user ID
 
-# --- Azure OpenAI Configuration ---
-AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
-AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-AZURE_OPENAI_EMBEDDING_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT")
-
 # Analytics service URL
 ANALYTICS_SERVICE_URL = "http://127.0.0.1:5002"
 
@@ -87,63 +81,6 @@ def to_dict_helper(instance):
         else:
             d[column.name] = value
     return d
-
-from langgraph.checkpoint.memory import MemorySaver
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
-from collections import defaultdict
-
-def reconstruct_messages_from_history(history_data):
-    """Converts DB history into LangChain message objects, sorted by trace_id and message order."""
-    messages = []
-    print("Reconstructing messages from history data:", history_data)
-    
-    if not history_data:
-        return MemorySaver(), []
-    
-    # Group messages by trace_id
-    traces = defaultdict(list)
-    for msg_data in history_data:
-        trace_id = msg_data.get('trace_id')
-        if trace_id:
-            traces[trace_id].append(msg_data)
-    
-    # Sort trace_ids chronologically
-    sorted_trace_ids = sorted(traces.keys())
-    
-    # Process each trace in chronological order
-    for trace_id in sorted_trace_ids:
-        trace_messages = traces[trace_id]
-        
-        # Sort messages within each trace by message type priority
-        message_priority = {
-            'human': 1,
-            'ai': 2
-        }
-        
-        trace_messages.sort(key=lambda x: (
-            message_priority.get(x.get('message_type'), 5),
-            x.get('trace_end', ''),
-        ))
-        
-        # Convert to LangChain message objects
-        for msg_data in trace_messages:
-            try:
-                message_type = msg_data.get('message_type')
-                content = msg_data.get('content', '')
-                
-                if message_type == 'human':
-                    messages.append(HumanMessage(content=content))
-                elif message_type == 'ai':
-                    messages.append(AIMessage(content=content))
-                
-            except Exception as e:
-                print(f"Error processing message in trace {trace_id}: {e}")
-                continue
-    
-    print(f"Reconstructed {len(messages)} messages from {len(sorted_trace_ids)} traces")
-    
-    # Return both the memory saver and the historical messages
-    return MemorySaver(), messages
 
 # Banking Database Models
 class User(db.Model):
