@@ -22,6 +22,10 @@ from shared.utils import _serialize_messages
 from init_data import check_and_ingest_data
 # Load Environment variables and initialize app
 import os
+
+from openai import AzureOpenAI
+from azure.identity import AzureCliCredential, get_bearer_token_provider
+
 from azure.identity import AzureCliCredential
 
 load_dotenv(override=True)
@@ -49,6 +53,20 @@ try:
 except Exception as e:
     print(f"❌ Failed to initialize OpenAI client: {e}")
     chat_client = None
+
+# Initialize Azure OpenAI client for direct embedding calls
+try:
+    openai_client = AzureOpenAI(
+                    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+                    api_key=os.environ["AZURE_OPENAI_KEY"],
+                    api_version=os.getenv("AZURE_AI_API_VERSION", "2025-04-01-preview")
+                )
+    print("✅ Agent OpenAI client initialized successfully")
+
+except Exception as e:
+    print(f"❌ Failed to initialize Azure OpenAI client: {e}")
+    openai_client = None
+
 
 # Database configuration for Azure SQL (banking data)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc://"
@@ -194,11 +212,93 @@ def get_transactions_summary(user_id: str = fixed_user_id, time_period: str = 't
         print(f"ERROR in get_transactions_summary: {e}")
         return json.dumps({"status": "error", "message": f"An error occurred while generating the transaction summary."})
 
-def search_support_documents(user_question: str) -> str:
-    """Searches the knowledge base for answers to customer support questions using vector search."""
-    # TODO: Implement vector search using Agent Framework tools or Azure AI Search
-    # For now, return a placeholder response
-    return f"Document search functionality is being updated. Your question about '{user_question}' has been noted. Please contact customer support for immediate assistance."
+
+def search_support_documents(user_question: str, top_k: int = 3) -> str:
+    """
+    Searches the DocsChunks_Embeddings table for documents similar to the user input.
+    
+    Args:
+        user_question: The user's question or search query
+        top_k: Number of top results to return (default: 3)
+    
+    Returns:
+        JSON string containing the search results with content and metadata
+    """
+    try:
+        from shared.db_connect import fabricsql_connection_agentic_db
+
+        # Generate embedding for user input using OpenAI
+        embedding_response = openai_client.embeddings.create(
+            input=user_question,
+            model=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT")
+        )
+        
+        user_embedding = embedding_response.data[0].embedding
+        
+        # Convert embedding to SQL Server VECTOR format
+        # VECTOR type expects a string like '[1.0, 2.0, 3.0, ...]'
+        embedding_str = '[' + ','.join(map(str, user_embedding)) + ']'
+        
+        # SQL query using VECTOR_DISTANCE for cosine similarity
+        search_query = """
+        DECLARE @q VECTOR(1536) = CAST(? AS NVARCHAR(MAX));
+        SELECT TOP (?)
+            id,
+            custom_id,
+            content,
+            content_metadata,
+            VECTOR_DISTANCE('cosine', embeddings, @q) AS distance
+        FROM [dbo].[DocsChunks_Embeddings]
+        ORDER BY distance ASC
+        """
+        
+        # Execute search
+        conn = fabricsql_connection_agentic_db()
+        cursor = conn.cursor()
+        cursor.execute(search_query, (embedding_str, top_k))
+        
+        results = []
+        for row in cursor.fetchall():
+            result = {
+                "id": str(row.id),
+                "custom_id": row.custom_id,
+                "content": row.content,
+                "metadata": json.loads(row.content_metadata) if row.content_metadata else {},
+                "similarity_score": 1 - row.distance  # Convert distance to similarity (0-1)
+            }
+            results.append(result)
+        
+        cursor.close()
+        conn.close()
+        
+        if not results:
+            return json.dumps({
+                "status": "success",
+                "message": "No relevant documents found.",
+                "results": []
+            })
+        
+        # Format results for the agent
+        formatted_results = []
+        for i, res in enumerate(results, 1):
+            formatted_results.append(
+                f"Result {i} (Score: {res['similarity_score']:.3f}):\n{res['content'][:500]}..."
+            )
+        
+        return json.dumps({
+            "status": "success",
+            "message": f"Found {len(results)} relevant document(s).",
+            "results": results,
+            "formatted_answer": "\n\n".join(formatted_results)
+        })
+        
+    except Exception as e:
+        print(f"ERROR in search_support_documents: {e}")
+        return json.dumps({
+            "status": "error",
+            "message": f"An error occurred during the search: {str(e)}"
+        })
+
 
 def create_new_account(user_id: str = fixed_user_id, account_type: str = 'checking', name: str = None, balance: float = 0.0) -> str:
     """Creates a new bank account for the user."""
