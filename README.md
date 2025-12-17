@@ -176,7 +176,7 @@ Open two terninal windows.
 
 #### Terminal 1: Start Backend
 
-Run below (**ensure you have your virtual environment activated for this!**  )
+From **backend** folder, run below (**ensure you have your virtual environment activated for this!**  )
 
 ```bash
 python launcher.py
