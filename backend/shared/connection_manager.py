@@ -59,6 +59,10 @@ class FabricConnectionManager:
         
         return fabricsql_connection_agentic_db()
     
+    def get_connection(self):
+        """Get a database connection (alias for create_connection for compatibility)."""
+        return self.create_connection()
+    
     def cleanup(self):
         """Clean up authentication cache."""
         if os.path.exists(self._credentials_cached_file):
