@@ -29,8 +29,8 @@ Through a hands-on interface, users can see the practical difference between wri
 ### How it works:
 - **Multi-Agent Workload**: The app is built on top of a multi-agent solution in Langgraph. There are four distinct agents:
     1. **Coordinator agent**: this agent is responsible for assessing user request and passing it to the relevant specialized agent,
-    2. **Support agent**: this agent is specialized in answerin customer service questions via RAG.
-    3. **Account agent**: this agent is a banking operations specialist that can respond to common banking requests such as account balance, transactioon summary, creating a new account, making transactions from one account to another, etc.
+    2. **Support agent**: this agent is specialized in answering general customer service questions via RAG.
+    3. **Account agent**: this agent is a banking operations specialist that can respond to common banking requests such as getting account balance/transactioon summary, creating a new account, making transactions from one account to another, etc.
     4. **Visualization agent**: this agent is responsible for creating custom visualizations and simulations for the user.
 - Scenarios to test:
     - Ask questions about your finances in plain English (e.g., "How much did I spend on groceries last month?"). An AI agent translates your question into a SQL query, executes it, and returns the answer.
