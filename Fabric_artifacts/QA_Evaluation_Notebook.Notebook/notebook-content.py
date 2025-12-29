@@ -58,8 +58,9 @@ print("Azure AI Evaluation SDK loaded successfully")
 
 # CELL ********************
 
-# ## Step 2: Load Configuration from .env file
-env_file_path = "./builtin/.env"  # Adjust this path as needed
+# ## Step 2: Load Configuration from .env file in Built-in
+
+env_file_path = "/lakehouse/default/Files/.env"  # Adjust this path as needed
 
 print("Loading configuration from .env file...")
 try:
@@ -69,6 +70,11 @@ try:
             # Skip comments and empty lines
             if line and not line.startswith("#") and "=" in line:
                 key, value = line.split("=", 1)
+                
+                # --- FIX: Clean whitespace around key and value ---
+                key = key.strip()
+                value = value.strip()
+                # --------------------------------------------------
                 
                 # Remove quotes from the value
                 value = value.strip("'\"")
@@ -110,15 +116,16 @@ This code:
 5. Creates the final 'df_new_qa_pairs' DataFrame for evaluation.
 """
 
-from pyspark.sql.functions import col, current_timestamp, lit, lag, array, when
+from pyspark.sql.functions import col, current_timestamp, lit, lag, array, when, lower
 from pyspark.sql import DataFrame
+from pyspark.sql.window import Window
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-SOURCE_TABLE = "dbo.chat_history"
-ALIGNED_QA_TABLE = "dbo.chat_qa_pairs_aligned" # This can be used for logging, but not required for eval
-SCORES_TABLE = "dbo.AnswerQualityScores_WithContext"
+SOURCE_TABLE = "chat_history"
+ALIGNED_QA_TABLE = "chat_qa_pairs_aligned"
+SCORES_TABLE = "AnswerQualityScores_WithContext"
 
 USER_MESSAGE_TYPE = 'human'
 AGENT_MESSAGE_TYPE = 'ai'
@@ -175,24 +182,27 @@ df_chat_history = spark.read.table(SOURCE_TABLE)
 total_messages = df_chat_history.count()
 print(f"Total messages in chat history: {total_messages}")
 
-# Get only human and AI messages, sorted by session and time
+# --- FIX: Check if 'agent_name' column exists and include it ---
+source_columns = df_chat_history.columns
+has_agent_name = "agent_name" in source_columns
+
+# Define columns to select
+cols_to_select = [
+    "trace_id", "session_id", "user_id", "agent_id", "message_type", 
+    "content", "tool_name", "response_time_ms", "model_name", 
+    "total_tokens", "completion_tokens", "prompt_tokens", "trace_end"
+]
+
+if has_agent_name:
+    print("✓ Found 'agent_name' column - including in selection")
+    cols_to_select.append("agent_name")
+else:
+    print("! 'agent_name' column NOT found - proceeding with 'agent_id' only")
+
+# Get conversation messages
 df_conversation = df_chat_history.filter(
     col("message_type").isin([USER_MESSAGE_TYPE, AGENT_MESSAGE_TYPE])
-).select(
-    "trace_id",
-    "session_id",
-    "user_id",
-    "agent_id",
-    "message_type",
-    "content",
-    "tool_name",
-    "response_time_ms",
-    "model_name",
-    "total_tokens",
-    "completion_tokens",
-    "prompt_tokens",
-    "trace_end"
-).orderBy("session_id", "trace_end")
+).select(*cols_to_select).orderBy("session_id", "trace_end")
 
 print(f"Total conversation messages: {df_conversation.count()}")
 
@@ -204,11 +214,20 @@ print(f"Total conversation messages: {df_conversation.count()}")
 window_spec = Window.partitionBy("session_id").orderBy("trace_end")
 df_with_order = df_conversation.withColumn("turn_number", row_number().over(window_spec))
 
-# Separate questions and answers
+# Separate questions
 df_questions = df_with_order.filter(col("message_type") == USER_MESSAGE_TYPE).alias("q")
-df_answers = df_with_order.filter(col("message_type") == AGENT_MESSAGE_TYPE).alias("a")
 
-# Join questions with their answers (same trace_id)
+# Filter out answers where agent_id OR agent_name is "coordinator" (case-insensitive)
+filter_condition = (col("message_type") == AGENT_MESSAGE_TYPE)
+filter_condition = filter_condition & (lower(col("agent_id")) != "coordinator")
+
+if has_agent_name:
+    filter_condition = filter_condition & (lower(col("agent_name")) != "coordinator")
+
+df_answers = df_with_order.filter(filter_condition).alias("a")
+# ----------------------------------------------------------------
+
+# Join questions with their answers
 df_qa_pairs = df_questions.join(
     df_answers,
     (df_questions["trace_id"] == df_answers["trace_id"]) &
@@ -234,10 +253,10 @@ df_qa_pairs = df_questions.join(
 )
 
 total_qa_pairs = df_qa_pairs.count()
-print(f"Total Q&A pairs: {total_qa_pairs}")
+print(f"Total Q&A pairs (excluding coordinator): {total_qa_pairs}")
 
 # ============================================================================
-# Build Conversation History for each Q&A pair
+# Build Conversation History
 # ============================================================================
 
 # Self-join to get previous Q&A pairs in the same session
@@ -368,7 +387,6 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
     if not current_question or not current_answer:
         return {
             "intent_resolution": None,
-            "task_adherence": None,
             "relevance": None,
             "coherence": None,
             "fluency": None,
@@ -389,7 +407,6 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
         )
         
         # Use dictionary-based model configuration (newer SDK format)
-        # This prevents the max_tokens error with newer OpenAI models
         model_config = {
             "azure_endpoint": azure_endpoint,
             "api_key": api_key,
@@ -397,35 +414,39 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
             "azure_deployment": deployment_name
         }
         
-        # Initialize evaluators
+        # Add is_reasoning_model=True for o1/o3/gpt-5-mini models ---
+        # This switches the SDK to use 'max_completion_tokens' instead of 'max_tokens'
         intent_resolution_eval = IntentResolutionEvaluator(
-            model_config=model_config
+            model_config=model_config, # Note: Check if this specific evaluator supports the flag if it fails,
+            is_reasoning_model=True
         )
+        
         relevance_eval = RelevanceEvaluator(
-            model_config=model_config
+            model_config=model_config,
+            is_reasoning_model=True
         )
         coherence_eval = CoherenceEvaluator(
-            model_config=model_config
+            model_config=model_config,
+            is_reasoning_model=True
         )
         fluency_eval = FluencyEvaluator(
-            model_config=model_config
+            model_config=model_config,
+            is_reasoning_model=True
         )
+        # --------------------------------------------------------------------
         
         # Build conversation context for evaluators that support it
         context_messages = []
         
         # Add conversation history if exists
         if conversation_history and len(conversation_history) > 0:
-            # Convert Spark Rows to dictionaries and sort by turn number
             try:
                 # Handle both dict and Row objects
                 history_list = []
                 for exchange in conversation_history:
                     if hasattr(exchange, 'asDict'):
-                        # It's a Spark Row, convert to dict
                         history_list.append(exchange.asDict())
                     else:
-                        # Already a dict
                         history_list.append(exchange)
                 
                 # Sort by turn number
@@ -441,7 +462,6 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
                         "content": exchange.get("answer", "")
                     })
             except Exception as e:
-                # If there's any issue with history, just skip it
                 pass
         
         # Current exchange
@@ -457,28 +477,21 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
         # Run evaluators
         results = {}
         
-        # Intent Resolution (supports message format)
+        # Intent Resolution
         try:
+            # Note: If IntentResolutionEvaluator fails with the same error
             intent_result = intent_resolution_eval(
                 query=current_question,
                 response=current_answer
             )
-            # The evaluator returns a dict with 'intent_resolution' key
             if isinstance(intent_result, dict):
                 results["intent_resolution"] = intent_result.get("intent_resolution", None)
                 results["intent_resolution_reason"] = intent_result.get("intent_resolution_reason", "")
                 results["intent_resolution_result"] = intent_result.get("intent_resolution_result", "")
                 results["intent_resolution_threshold"] = intent_result.get("intent_resolution_threshold", None)
-            elif isinstance(intent_result, (int, float)):
-                results["intent_resolution"] = float(intent_result)  # Keep as float
-                results["intent_resolution_reason"] = "Evaluated successfully"
-                results["intent_resolution_result"] = "pass" if intent_result >= 3 else "fail"
-                results["intent_resolution_threshold"] = 3.0
             else:
                 results["intent_resolution"] = None
-                results["intent_resolution_reason"] = f"Unexpected result type: {type(intent_result)}"
-                results["intent_resolution_result"] = ""
-                results["intent_resolution_threshold"] = None
+                results["intent_resolution_reason"] = "Unexpected result format"
         except Exception as e:
             results["intent_resolution"] = None
             results["intent_resolution_reason"] = f"Error: {str(e)}"
@@ -496,16 +509,8 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
                 results["relevance_reason"] = relevance_result.get("relevance_reason", "")
                 results["relevance_result"] = relevance_result.get("relevance_result", "")
                 results["relevance_threshold"] = relevance_result.get("relevance_threshold", None)
-            elif isinstance(relevance_result, (int, float)):
-                results["relevance"] = float(relevance_result)  # Keep as float
-                results["relevance_reason"] = "Evaluated successfully"
-                results["relevance_result"] = "pass" if relevance_result >= 3 else "fail"
-                results["relevance_threshold"] = 3.0
             else:
                 results["relevance"] = None
-                results["relevance_reason"] = f"Unexpected result type: {type(relevance_result)}"
-                results["relevance_result"] = ""
-                results["relevance_threshold"] = None
         except Exception as e:
             results["relevance"] = None
             results["relevance_reason"] = f"Error: {str(e)}"
@@ -523,16 +528,8 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
                 results["coherence_reason"] = coherence_result.get("coherence_reason", "")
                 results["coherence_result"] = coherence_result.get("coherence_result", "")
                 results["coherence_threshold"] = coherence_result.get("coherence_threshold", None)
-            elif isinstance(coherence_result, (int, float)):
-                results["coherence"] = float(coherence_result)  # Keep as float
-                results["coherence_reason"] = "Evaluated successfully"
-                results["coherence_result"] = "pass" if coherence_result >= 3 else "fail"
-                results["coherence_threshold"] = 3.0
             else:
                 results["coherence"] = None
-                results["coherence_reason"] = f"Unexpected result type: {type(coherence_result)}"
-                results["coherence_result"] = ""
-                results["coherence_threshold"] = None
         except Exception as e:
             results["coherence"] = None
             results["coherence_reason"] = f"Error: {str(e)}"
@@ -550,16 +547,8 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
                 results["fluency_reason"] = fluency_result.get("fluency_reason", "")
                 results["fluency_result"] = fluency_result.get("fluency_result", "")
                 results["fluency_threshold"] = fluency_result.get("fluency_threshold", None)
-            elif isinstance(fluency_result, (int, float)):
-                results["fluency"] = float(fluency_result)  # Keep as float
-                results["fluency_reason"] = "Evaluated successfully"
-                results["fluency_result"] = "pass" if fluency_result >= 3 else "fail"
-                results["fluency_threshold"] = 3.0
             else:
                 results["fluency"] = None
-                results["fluency_reason"] = f"Unexpected result type: {type(fluency_result)}"
-                results["fluency_result"] = ""
-                results["fluency_threshold"] = None
         except Exception as e:
             results["fluency"] = None
             results["fluency_reason"] = f"Error: {str(e)}"
@@ -572,7 +561,6 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
     except Exception as e:
         return {
             "intent_resolution": None,
-            "task_adherence": None,
             "relevance": None,
             "coherence": None,
             "fluency": None,
@@ -580,7 +568,7 @@ def evaluate_with_azure_ai_sdk(conversation_history, current_question, current_a
             "relevance_reason": "",
             "coherence_reason": "",
             "fluency_reason": "",
-            "evaluation_error": f"Evaluation failed: {repr(e)}" # <-- CHANGED to repr(e)
+            "evaluation_error": f"Evaluation failed: {repr(e)}"
         }
 
 # METADATA ********************
