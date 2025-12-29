@@ -233,13 +233,13 @@ python Ingest_pdf.py
 As part of Fabric artifacts, we have included a notebook (QA_Evaluation_Notebook) that computes four scores (intent resolution, relevance, coherence and fluency) reflecting the agent's performance when answsering user requests. These scores are calculated based on Question/Answer pairs using [Azure AI Evaluation](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/agent-evaluate-sdk)
 You can set up this notebook in your Fabric workspace and run by following below steps:
 1. Open the notebook item, on the left side, under **Explorer -> Data items** click on **"+ Add data items" -> "Existing Data Sources"** and choose the agentic_lake. Now your notebook is connected to the correct data source
-2. Last step is to provide environment variables required to connect to your **llm model** of choice to be used as the judge. Create a .env file as below and upload it to the **"Built-in" folder under "Resources" tab** in your notebook page:
+2. Last step is to provide environment variables required to connect to your **llm model** of choice to be used as the judge. Create a .env file as below and upload it to the **Files** (located under the Tables) in your notebook page:
 
     ``` 
     AZURE_OPENAI_KEY="your key"
     AZURE_OPENAI_ENDPOINT="your model endpoint"
-    AZURE_OPENAI_DEPLOYMENT=model name
-    AZURE_OPENAI_API_VERSION = api version
+    AZURE_OPENAI_DEPLOYMENT="model name"
+    AZURE_OPENAI_API_VERSION="api version"
     ```
 3. Now you can run the cells in the notebook in order. After all is run successfully there should be a new table created in the "agentic_lake" called **answerqualityscores_withcontext** which has all the scores.
 
