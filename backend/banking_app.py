@@ -808,6 +808,7 @@ def chatbot():
 
         producer_events = EventHubProducerClient.from_connection_string(conn_str=eventHubConnString, eventhub_name=eventHubName)
         from agent_analytics import stream_load
+        flag = False
         try:
             trace_events, result= execute_trace(banking_system, initial_state, thread_config)
             end_time = time.time()
@@ -822,10 +823,11 @@ def chatbot():
             # step1-  test simulate extremely sensitive content. First uncomment below to cause exception -->
             sensitive_list = ["violence", "self_harm", "hate",
                               "sexual", "jailbreak"]
-            flag = False
+            
             if(user_message in sensitive_list):
                 flag = True
-                result = res_dict["content"]  
+                result = res_dict["content"] 
+             
             # Send analytics in background thread - DON'T WAIT
             def log_analytics_async():
                 try:
