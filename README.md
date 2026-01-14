@@ -126,7 +126,9 @@ You only need to do below steps one time.
 
 3. Now go back to your Fabric workspace and trigger an update via Source Control
 
-4. This will start to set everything up and may take 1-2 minutes 
+4. This will start to set up the connection between lakehouse's SQL analytics endpoint and the semantic model and  may take 1-2 minutes. Below shows how your data lineage view should look like after this is done. 
+
+    ![db_lineage](assets/db_lineage.png)
 
 ### 4. Add extra views to Lakehouse's SQL analytics endpoint
 
