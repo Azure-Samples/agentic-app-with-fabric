@@ -43,7 +43,7 @@ Before we start coding, let's understand how the **multi-agent system** works:
 │                    MULTI-AGENT BACKEND (Flask + LangGraph)          │
 ├─────────────────────────────────────────────────────────────────────┤
 │  banking_app.py (API Entry Point)                                   │
-│  └── /api/chatbot → execute_trace() → multi_agent_banking.py       │
+│  └── /api/chatbot → execute_trace() → multi_agent_banking.py        │
 ├─────────────────────────────────────────────────────────────────────┤
 │  multi_agent_banking.py (StateGraph Workflow)                       │
 │  ├── coordinator_node → Routes to specialist agents                 │

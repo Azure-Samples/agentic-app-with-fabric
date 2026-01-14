@@ -62,7 +62,7 @@ You only need to do below steps one time.
     - **SQL server connection string**: First, go to the **SQL analytics endpoint** of the **agentic_lake**, go to settings -> SQL endpoint -> copy value under SQL connection string  (paste it somewhere to keep it for now)
     - **Lakehouse analytics GUID**: Look at the address bar, you should see something like this: *https://app.fabric.microsoft.com/groups/[first string]/mirroredwarehouses (or lakehouses)/**[second string]**?experience=fabric-developer*
         - copy the value you see in position of second string. 
-2. Now go to: **Fabric_artifacts\agentic_semantic_model.SemanticModel\definition**, open the file called **expressions.tmdl** and replace the values with the ones you just retrieved. *Save the file and push it to your repo*.
+2. Now go to: **/Fabric_artifacts/banking_semantic_model.SemanticModel/definition/**, open the file called **expressions.tmdl** and replace the values with the ones you just retrieved. *Save the file and push it to your repo*.
 
 3. Now go back to your Fabric workspace and trigger an update via Source Control
 
