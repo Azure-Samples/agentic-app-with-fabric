@@ -4,10 +4,10 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from sqlalchemy.pool import QueuePool
-
+import os
 from chat_data_model import init_chat_db
 from shared.connection_manager import sqlalchemy_connection_creator, connection_manager
-
+from azure.eventhub import EventHubProducerClient, EventData
 load_dotenv(override=True)
 
 app = Flask(__name__)
@@ -116,6 +116,7 @@ def log_multi_agent_trace():
         
         # Log the multi-agent trace
         result = chat_manager.add_multi_agent_trace(
+            trace_id =data.get('trace_id'),
             serialized_messages=data.get('messages'),
             trace_duration=data.get('trace_duration', 0),
             event_times=data.get('event_times', []),
@@ -158,8 +159,6 @@ def log_content_safety_violation():
         # Initialize chat history manager
         chat_manager = ChatHistoryManager(session_id=res_dict.get('session_id'), user_id=res_dict.get('user_id'))
         
-        trace_id = res_dict["trace_id"]
-        
         # Log the user's message if provided
         if res_dict.get("user_message"):
             user_msg = {
@@ -169,14 +168,14 @@ def log_content_safety_violation():
             }
             chat_manager.add_human_message(
                 message=user_msg,
-                trace_id=trace_id,
+                trace_id=res_dict.get("trace_id"),
                 routing_step=0
             )
         
         # Log the safety response
         chat_manager.add_ai_message(
             message=res_dict["message"],
-            trace_id=trace_id,
+            trace_id=res_dict.get("trace_id"),
             step_duration=0,
             agent_name=res_dict["agent_name"],
             routing_step=1
@@ -184,7 +183,7 @@ def log_content_safety_violation():
         
         # Log the agent trace
         chat_manager._log_agent_routing(
-            trace_id=trace_id,
+            trace_id=res_dict.get("trace_id"),
             step_number=1,
             from_agent="system",
             current_agent=res_dict["agent_name"],
@@ -237,3 +236,55 @@ def initialize_analytics_app():
         initialize_tool_definitions()
         initialize_agent_definitions()
         print("[Analytics Service] Database tables initialized")
+
+
+import json
+from datetime import datetime
+from azure.eventhub import EventData
+from shared.utils import _to_json_primitive
+def sendToEventsHub(jsonEvent, producer_events):
+    event_data_batch = producer_events.create_batch() 
+    event_data_batch.add(EventData(jsonEvent)) 
+    producer_events.send_batch(event_data_batch)
+
+def stream_load(result_dict: dict, user_msg: str,
+                 producer_events, failed_response: bool = False):
+    event_time = datetime.now().isoformat()
+    try:
+        if failed_response:
+            stream_dict = {
+                "timestamp": event_time,
+                "trace_id": result_dict.get("trace_id"),
+                "session_id": result_dict.get("session_id"),
+                "user_id": result_dict.get("user_id"),
+                "message": result_dict.get("message"),
+                "agent_name": result_dict.get("agent_name"),
+                "user_message": user_msg,
+                "filter_category": result_dict.get("filter_category"),
+                "content_filter_info": result_dict.get("content_filter_info")
+            }
+            sendToEventsHub(json.dumps(stream_dict), producer_events)
+            print("event message sent for single blocked message")
+            
+
+        else:
+            
+            for i in range(len(result_dict.get("messages", []))):
+                stream_dict = {
+                "timestamp": event_time,
+                "trace_id": result_dict.get("trace_id"),
+                "session_id": result_dict.get("session_id"),
+                "user_id": result_dict.get("user_id"),
+                "message": _to_json_primitive(result_dict.get("messages", [])[i]),
+                "agent_name" : result_dict.get("nodes_list", [])[i],                       
+                "user_message": user_msg,
+                "filter_category": "None",
+                "content_filter_info": "User content Not blocked"
+                }
+                sendToEventsHub(json.dumps(stream_dict), producer_events)
+                print("event message sent for iteration:", i)
+            print("Number of stream batches sent:", len(result_dict.get("messages", [])))
+            return True
+    except Exception as e:
+        print("Error in stream load to Event Hub:", str(e))
+        return False

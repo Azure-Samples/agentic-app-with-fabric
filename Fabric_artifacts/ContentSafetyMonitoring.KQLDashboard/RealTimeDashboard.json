@@ -1,0 +1,139 @@
+{
+  "schema_version": 67,
+  "tiles": [
+    {
+      "id": "d197457b-cc7f-4905-905c-fb0ed5dd9824",
+      "title": "Real-time events",
+      "visualType": "table",
+      "pageId": "4602f85f-6284-409b-aa7c-867e28ccb1fe",
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 9,
+        "height": 7
+      },
+      "queryRef": {
+        "kind": "query",
+        "queryId": "7733609a-8c31-4c50-b56c-b05045e0b48b"
+      },
+      "visualOptions": {
+        "table__enableRenderLinks": true,
+        "colorRulesDisabled": true,
+        "crossFilter": [],
+        "crossFilterDisabled": false,
+        "drillthroughDisabled": false,
+        "drillthrough": [],
+        "table__renderLinks": [],
+        "colorRules": [],
+        "selectedDataOnLoad": {
+          "all": true,
+          "limit": 10
+        }
+      }
+    },
+    {
+      "id": "d455015b-9d69-42ea-a17a-c7d277def4e6",
+      "title": "Extreme Self Harm Content Blocked",
+      "visualType": "line",
+      "pageId": "4602f85f-6284-409b-aa7c-867e28ccb1fe",
+      "layout": {
+        "x": 9,
+        "y": 0,
+        "width": 9,
+        "height": 7
+      },
+      "queryRef": {
+        "kind": "query",
+        "queryId": "e1691e00-5b0d-4c74-a255-637c1603d6c1"
+      },
+      "visualOptions": {
+        "multipleYAxes": {
+          "base": {
+            "id": "-1",
+            "label": "",
+            "columns": [],
+            "yAxisMaximumValue": null,
+            "yAxisMinimumValue": null,
+            "yAxisScale": "linear",
+            "horizontalLines": []
+          },
+          "additional": [],
+          "showMultiplePanels": false
+        },
+        "hideLegend": false,
+        "legendLocation": "bottom",
+        "xColumnTitle": "",
+        "xColumn": null,
+        "yColumns": null,
+        "seriesColumns": null,
+        "xAxisScale": "linear",
+        "verticalLine": "",
+        "crossFilter": [],
+        "crossFilterDisabled": false,
+        "drillthroughDisabled": false,
+        "forceAxisTicks": false,
+        "drillthrough": [],
+        "selectedDataOnLoad": {
+          "all": true,
+          "limit": 10
+        }
+      }
+    }
+  ],
+  "baseQueries": [],
+  "parameters": [
+    {
+      "kind": "duration",
+      "id": "b317e811-3f1c-47e0-99bc-dcbc795baa41",
+      "displayName": "Time range",
+      "description": "",
+      "beginVariableName": "_startTime",
+      "endVariableName": "_endTime",
+      "defaultValue": {
+        "kind": "dynamic",
+        "count": 1,
+        "unit": "hours"
+      },
+      "showOnPages": {
+        "kind": "all"
+      }
+    }
+  ],
+  "dataSources": [
+    {
+      "id": "19aa6f4c-7cb6-41fd-a10c-937f180b9907",
+      "kind": "kusto-trident",
+      "scopeId": "kusto-trident",
+      "clusterUri": "",
+      "database": "b5524f9b-9b13-84b0-4931-d533ccff02c9",
+      "name": "app_events",
+      "workspace": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
+  "pages": [
+    {
+      "name": "Page 1",
+      "id": "4602f85f-6284-409b-aa7c-867e28ccb1fe"
+    }
+  ],
+  "queries": [
+    {
+      "dataSource": {
+        "kind": "inline",
+        "dataSourceId": "19aa6f4c-7cb6-41fd-a10c-937f180b9907"
+      },
+      "text": "// Use \"take\" to view a sample number of records in the table and check the data.\nagentic_events\n| extend DateTime = todatetime(timestamp)\n| summarize eventCount = count() by DateTime, filter_category\n| project DateTime, eventCount, filter_category\n\n",
+      "id": "7733609a-8c31-4c50-b56c-b05045e0b48b",
+      "usedVariables": []
+    },
+    {
+      "dataSource": {
+        "kind": "inline",
+        "dataSourceId": "19aa6f4c-7cb6-41fd-a10c-937f180b9907"
+      },
+      "text": "agentic_events\n| where filter_category contains \"self_harm\"\n| extend DateTime = todatetime(timestamp)\n| summarize eventCount = count() by DateTime\n| project DateTime, eventCount\n\n",
+      "id": "e1691e00-5b0d-4c74-a255-637c1603d6c1",
+      "usedVariables": []
+    }
+  ]
+}

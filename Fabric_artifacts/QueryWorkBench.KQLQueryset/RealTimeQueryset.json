@@ -1,0 +1,22 @@
+{
+  "queryset": {
+    "version": "1.0.0",
+    "dataSources": [
+      {
+        "id": "23a6a5bf-cf2e-48eb-ada6-e31a47d71077",
+        "clusterUri": "",
+        "type": "Fabric",
+        "databaseItemId": "b5524f9b-9b13-84b0-4931-d533ccff02c9",
+        "databaseItemName": "app_events"
+      }
+    ],
+    "tabs": [
+      {
+        "id": "88967402-fc14-448d-9fce-94e133dd4043",
+        "content": "//***********************************************************************************************************\n// Here are two articles to help you get started with KQL:\n// KQL reference guide - https://aka.ms/KQLguide\n// SQL - KQL conversions - https://aka.ms/sqlcheatsheet\n//***********************************************************************************************************\n\n// Use \"take\" to view a sample number of records in the table and check the data.\nagentic_events\n| where filter_category startswith \"None\"\n| extend DateTime = todatetime(timestamp)\n| summarize eventCount = count() by DateTime\n\nagentic_events\n| where filter_category !contains \"None\"\n| extend DateTime = todatetime(timestamp)\n| summarize eventCount = count() by DateTime, filter_category\n| project DateTime, eventCount, filter_category\n\nagentic_events\n| where filter_category startswith \"self_harm\"\n| extend DateTime = todatetime(timestamp)\n| summarize eventCount = count() by DateTime\n| project DateTime, eventCount\n\nagentic_events\n| where filter_category startswith \"violence\"\n| extend DateTime = todatetime(timestamp)\n| summarize eventCount = count() by DateTime\n| project DateTime, eventCount\n\nagentic_events\n| where filter_category startswith \"sexual\"\n| extend DateTime = todatetime(timestamp)\n| summarize eventCount = count() by DateTime\n| project DateTime, eventCount\n\nagentic_events\n| where filter_category startswith \"self_harm\"\n| extend DateTime = todatetime(timestamp)\n| summarize eventCount = count() by DateTime\n| project DateTime, eventCount\n\nagentic_events\n| where filter_category startswith \"jailbreak\"\n| extend DateTime = todatetime(timestamp)\n| summarize eventCount = count() by DateTime\n| project DateTime, eventCount",
+        "title": "Tab",
+        "dataSourceId": "23a6a5bf-cf2e-48eb-ada6-e31a47d71077"
+      }
+    ]
+  }
+}

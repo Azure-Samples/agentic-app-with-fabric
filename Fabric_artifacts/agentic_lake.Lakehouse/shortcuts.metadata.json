@@ -1,0 +1,132 @@
+[
+  {
+    "name": "users",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/users",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  },
+  {
+    "name": "transactions",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/transactions",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  },
+  {
+    "name": "tool_usage",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/tool_usage",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  },
+  {
+    "name": "tool_definitions",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/tool_definitions",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  },
+  {
+    "name": "chat_sessions",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/chat_sessions",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  },
+  {
+    "name": "chat_history",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/chat_history",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  },
+  {
+    "name": "ai_widgets",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/ai_widgets",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  },
+  {
+    "name": "agent_traces",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/agent_traces",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  },
+  {
+    "name": "agent_definitions",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/agent_definitions",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  },
+  {
+    "name": "accounts",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/dbo/accounts",
+        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "SQLDbNative"
+      }
+    }
+  }
+]

@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/dataSource/1.0.0/schema.json",
-  "artifactId": "8b0e5ac0-8d91-8995-43b9-dfa4ce17bf20",
+  "artifactId": "fb30712b-d7a8-a06a-4004-373442ecab99",
   "workspaceId": "00000000-0000-0000-0000-000000000000",
   "dataSourceInstructions": null,
   "displayName": "agentic_lake",

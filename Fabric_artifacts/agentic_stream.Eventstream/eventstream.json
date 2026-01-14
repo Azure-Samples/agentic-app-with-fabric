@@ -1,0 +1,53 @@
+{
+  "sources": [
+    {
+      "id": "a93982cb-77fa-45d9-a536-c8f68fecf5c7",
+      "name": "CustomEndpoint-Source",
+      "type": "CustomEndpoint",
+      "properties": {}
+    }
+  ],
+  "destinations": [
+    {
+      "id": "f89b209b-443d-405a-8a0d-9c19d1326e44",
+      "name": "Eventhouse",
+      "type": "Eventhouse",
+      "properties": {
+        "dataIngestionMode": "DirectIngestion",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "itemId": "b5524f9b-9b13-84b0-4931-d533ccff02c9",
+        "tableName": "",
+        "connectionName": null,
+        "mappingRuleName": null
+      },
+      "inputNodes": [
+        {
+          "name": "agenticstream-stream"
+        }
+      ],
+      "inputSchemas": [
+        {
+          "name": "agenticstream-stream",
+          "schema": {
+            "columns": []
+          }
+        }
+      ]
+    }
+  ],
+  "streams": [
+    {
+      "id": "b2bd8abd-86f1-47d4-8cdd-1e40698851c4",
+      "name": "agenticstream-stream",
+      "type": "DefaultStream",
+      "properties": {},
+      "inputNodes": [
+        {
+          "name": "CustomEndpoint-Source"
+        }
+      ]
+    }
+  ],
+  "operators": [],
+  "compatibilityLevel": "1.1"
+}

@@ -15,7 +15,7 @@ ChatHistoryManager = None
 AgentDefinition = None
 AgentTrace = None
 
-def handle_content_safety_error(error, session_id: str, user_id: str, trace_id: str = None, 
+def handle_content_safety_error(error, trace_id:str, session_id: str, user_id: str,
                                 agent_name: str = None, user_message: str = None):
     """
     Handle openai.BadRequestError related to content safety violations.
@@ -35,13 +35,11 @@ def handle_content_safety_error(error, session_id: str, user_id: str, trace_id: 
         dict: A serialized message object compatible with add_ai_message() format
     """
     
-    if not trace_id:
-        trace_id = str(uuid.uuid4())
     
     # Extract content safety information from the error
     error_message = str(error)
     filter_category = "unknown"
-
+    
     content_filter_result_mock= {
         "hate": {
             "filtered": False,
@@ -125,7 +123,6 @@ def handle_content_safety_error(error, session_id: str, user_id: str, trace_id: 
     }
     
     print(f"[Content Safety Handler] Generated safety response for {filter_category} violation")
-    print(f"[Content Safety Handler] Trace ID: {trace_id}")
     print(f"[Content Safety Handler] Content filter details: {content_filter_result_mock}")
     
     return {
@@ -377,11 +374,11 @@ def init_chat_db(database):
                 db.session.rollback()
                 return None
 
-        def add_multi_agent_trace(self, serialized_messages: list[str], trace_duration: int, 
+        def add_multi_agent_trace(self, trace_id: str, serialized_messages: list[str], trace_duration: int, 
                                  event_times: list = [], nodes_list: list = []):
             """Add all messages in a multi-agent trace to the chat history"""
-            trace_id = str(uuid.uuid4())
-            print(f"New multi-agent trace_id generated: {trace_id}")
+            # trace_id = str(uuid.uuid4())
+            print(f"New trace data being logged for trace_id --> {trace_id}")
             
             id_list = []
             prev_agent = "system"
@@ -396,7 +393,7 @@ def init_chat_db(database):
                 self._log_agent_routing(trace_id=trace_id, step_number=step_number,
                                         from_agent = prev_agent, current_agent=agent_name,
                                         execution_duration_ms=step_duration)
-                if(prev_agent=="system" and len(trace_step_msg)>2):  # for future traces, this escapes redundant history message logging
+                if(prev_agent=="system" and len(trace_step_msg)>2):  # for future traces in the same session, this escapes redundant history message logging
                     skip_n = len(trace_step_msg)-2 
 
                 trace_step_msg_cut = trace_step_msg[skip_n:]
@@ -872,7 +869,8 @@ def initialize_agent_definitions():
     db.session.commit()
     print("Multi-agent definitions initialized")
 
-def prep_multi_agent_log_load(trace_events, session_id, user_id, trace_duration: int=0):
+def prep_multi_agent_log_load(trace_events, session_id, user_id,
+                              trace_id, trace_duration: int=0):
     node_names = []
     serialized_events = []
     time_list = []
@@ -885,8 +883,10 @@ def prep_multi_agent_log_load(trace_events, session_id, user_id, trace_duration:
         node_names.append(node_name)
         serialized_events.append(serial_events)
         time_list.append(event_time)
+            
 
     analytics_data = {
+        "trace_id": trace_id,
         "event_times": time_list,
         "nodes_list": node_names,
         "session_id": session_id,

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "KQLDashboard",
+    "displayName": "ContentSafetyMonitoring",
+    "description": "ContentSafetyMonitoring"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "e192cca9-882d-bfce-4689-14d6fe8e92ca"
+  }
+}
