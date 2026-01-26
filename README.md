@@ -1,6 +1,6 @@
 # 🏦  Agentic Banking App with SQL in Fabric
 
-#### NOTE: The main branch was last updated on: 🟢2025-12-30🟢
+#### NOTE: The main branch was last updated on: 🟢2026-01-26🟢
 
 **Agentic Banking App** is an interactive web application designed to simulate a modern banking dashboard. Its primary purpose is to serve as an educational tool, demonstrating:
 - How SQL-based databases are leveraged across different types of workloads: **OLTP**, **OLAP**, **AI** workloads.
