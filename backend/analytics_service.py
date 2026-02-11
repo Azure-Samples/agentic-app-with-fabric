@@ -14,48 +14,28 @@ load_dotenv()
 
 def get_chat_history_for_session(session_id: str, user_id: str) -> List[Dict[str, Any]]:
     """
-    In-process equivalent of GET /analytics/api/chat/history/<session_id>.
-    Returns a list of serialized messages for the given session.
-    
-    When called from banking_app, this bypasses ChatHistoryManager to avoid context issues.
+    Retrieve conversation history from Cosmos DB longterm_memory container.
+    Returns a list of message dicts: [{type, content, timestamp}, ...]
     """
-    # Since we're being called from banking_app, use its database directly
-    from banking_app import db
-    
-    # Import the model classes (not instances) to access table structure
-    from chat_data_model import ChatHistory    
+    import cosmos_chat_model
     try:
-        # Use db.session directly to avoid the .query property which causes context issues
-        from sqlalchemy import desc
-        
-        # Build query using session.query instead of Model.query
-        messages = db.session.query(
-            ChatHistory.trace_id, 
-            ChatHistory.message_type, 
-            ChatHistory.content, 
-            ChatHistory.trace_end
-        ).filter(
-            ChatHistory.session_id == session_id,
-            ChatHistory.user_id == user_id
-        ).order_by(
-            desc(ChatHistory.trace_end)
-        ).limit(50).all()
-        
-        # Format and return
+        messages = cosmos_chat_model.get_conversation_history(
+            session_id=session_id, user_id=user_id
+        )
+        # Map to the format expected by reconstruct_messages_from_history
         result = [
             {
-                "trace_id": msg[0], 
-                "message_type": msg[1], 
-                "content": msg[2], 
-                "trace_end": msg[3].isoformat() if msg[3] else None
-            } 
-            for msg in reversed(messages) if msg  # reversed to get chronological order
+                "trace_id": session_id,
+                "message_type": msg.get("type", "unknown"),
+                "content": msg.get("content", ""),
+                "trace_end": msg.get("timestamp"),
+            }
+            for msg in messages
         ]
-        
         return result
-        
+
     except Exception as e:
-        print(f"[analytics_service] Error fetching chat history: {e}")
+        print(f"[analytics_service] Error fetching chat history from Cosmos DB: {e}")
         import traceback
         traceback.print_exc()
         return []

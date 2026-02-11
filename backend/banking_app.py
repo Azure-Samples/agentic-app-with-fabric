@@ -29,6 +29,10 @@ from chat_data_model import init_chat_db
 from chat_data_model import init_chat_db
 from ai_widget_model import init_ai_widget_db
 from widget_queries import execute_widget_query  # NEW: Import for dynamic widgets
+
+# Cosmos DB imports for widget configs and conversation history
+import cosmos_widget_model
+import cosmos_chat_model
 # Load Environment variables and initialize app
 import os
 load_dotenv(override=True)
@@ -557,18 +561,16 @@ def handle_transactions():
 
 @app.route('/api/ai-widgets', methods=['GET', 'POST'])
 def handle_ai_widgets():
-    '''Handle AI widget list and creation'''
+    '''Handle AI widget list and creation — backed by Cosmos DB gen_ui_config'''
     user_id = get_current_user_id()
-    
+
     if request.method == 'GET':
-        from ai_widget_model import get_user_widgets
-        widgets = get_user_widgets(user_id)
+        widgets = cosmos_widget_model.get_user_widgets(user_id)
         return jsonify(widgets)
-    
+
     if request.method == 'POST':
-        from ai_widget_model import create_widget
         data = request.json
-        widget = create_widget(
+        widget = cosmos_widget_model.create_widget(
             user_id=user_id,
             title=data.get('title', 'Untitled Widget'),
             description=data.get('description', ''),
@@ -583,27 +585,24 @@ def handle_ai_widgets():
 
 @app.route('/api/ai-widgets/<widget_id>', methods=['GET', 'PUT', 'DELETE'])
 def handle_ai_widget(widget_id):
-    '''Handle individual AI widget operations'''
+    '''Handle individual AI widget operations — backed by Cosmos DB gen_ui_config'''
     user_id = get_current_user_id()
-    
+
     if request.method == 'GET':
-        from ai_widget_model import get_widget_by_id
-        widget = get_widget_by_id(widget_id, user_id)
+        widget = cosmos_widget_model.get_widget_by_id(widget_id, user_id)
         if not widget:
             return jsonify({"error": "Widget not found"}), 404
         return jsonify(widget)
-    
+
     if request.method == 'PUT':
-        from ai_widget_model import update_widget
         data = request.json
-        widget = update_widget(widget_id, user_id, data)
+        widget = cosmos_widget_model.update_widget(widget_id, user_id, data)
         if not widget:
             return jsonify({"error": "Widget not found or access denied"}), 404
         return jsonify(widget)
-    
+
     if request.method == 'DELETE':
-        from ai_widget_model import delete_widget
-        success = delete_widget(widget_id, user_id)
+        success = cosmos_widget_model.delete_widget(widget_id, user_id)
         if not success:
             return jsonify({"error": "Widget not found or access denied"}), 404
         return jsonify({"status": "success", "message": "Widget deleted"})
@@ -618,10 +617,8 @@ def refresh_ai_widget(widget_id):
     print(f"[ai-widgets] Widget ID: {widget_id}")
     print(f"[ai-widgets] User ID: {user_id}")
     
-    from ai_widget_model import get_widget_by_id, update_widget_data
-    
-    # Get the widget
-    widget = get_widget_by_id(widget_id, user_id)
+    # Get the widget from Cosmos DB
+    widget = cosmos_widget_model.get_widget_by_id(widget_id, user_id)
     if not widget:
         print(f"[ai-widgets] ERROR: Widget not found")
         return jsonify({"error": "Widget not found"}), 404
@@ -658,7 +655,7 @@ def refresh_ai_widget(widget_id):
         
         # Update the widget with new data
         print(f"[ai-widgets] Updating widget data...")
-        updated_widget = update_widget_data(widget_id, user_id, fresh_data)
+        updated_widget = cosmos_widget_model.update_widget_data(widget_id, user_id, fresh_data)
         
         if not updated_widget:
             print(f"[ai-widgets] ERROR: update_widget_data returned None")
@@ -742,18 +739,27 @@ def chatbot():
             4. Tell the user the widget was created and whether it's dynamic (refreshable) or static
             """
         
-        # Fetch chat history from the analytics service
+        # Fetch chat history from Cosmos DB longterm_memory
         history_start = time.time()
-        raw_history = get_chat_history_for_session(session_id=session_id, user_id=user_id)
+        cosmos_history = cosmos_chat_model.get_conversation_history(
+            session_id=session_id, user_id=user_id
+        )
         history_duration = time.time() - history_start
         print(
-            f"[chatbot] History fetch (in-process) duration: {history_duration:.2f}s "
-            f"(records={len(raw_history) if raw_history else 0})"
+            f"[chatbot] History fetch (Cosmos DB) duration: {history_duration:.2f}s "
+            f"(records={len(cosmos_history) if cosmos_history else 0})"
         )
-        
-        # Reconstruct messages and session memory
+
+        # Convert Cosmos messages to LangChain message objects
         reconstruct_start = time.time()
-        _, historical_messages = reconstruct_messages_from_history(raw_history)
+        historical_messages = []
+        for msg_data in (cosmos_history or []):
+            msg_type = msg_data.get("type", "")
+            content = msg_data.get("content", "")
+            if msg_type == "human":
+                historical_messages.append(HumanMessage(content=content))
+            elif msg_type == "ai":
+                historical_messages.append(AIMessage(content=content))
         reconstruct_duration = time.time() - reconstruct_start
         print(f"[chatbot] Reconstructed history in {reconstruct_duration:.2f}s: "
               f"{len(historical_messages)} historical messages")
@@ -761,7 +767,7 @@ def chatbot():
         # Print debugging info (existing debug prints preserved)
         print("\n--- Context being passed to the agent ---")
         print(f"Current User ID: {user_id}")
-        print(f"History data received: {len(raw_history) if raw_history else 0} messages")
+        print(f"History data received: {len(cosmos_history) if cosmos_history else 0} messages")
         print(f"Historical messages reconstructed: {len(historical_messages)}")
         for i, msg in enumerate(historical_messages):
             print(f"[History {i}] {msg.__class__.__name__}: {msg.content[:120]}...")
@@ -828,6 +834,20 @@ def chatbot():
                 flag = True
                 result = res_dict["content"] 
              
+            # Save human + AI messages to Cosmos DB longterm_memory
+            try:
+                cosmos_messages = [
+                    {"type": "human", "content": user_message},
+                    {"type": "ai", "content": result},
+                ]
+                cosmos_chat_model.save_conversation_messages(
+                    session_id=session_id,
+                    user_id=user_id,
+                    messages=cosmos_messages,
+                )
+            except Exception as cosmos_err:
+                print(f"[chatbot] Warning: Failed to save to Cosmos DB longterm_memory: {cosmos_err}")
+
             # Send analytics in background thread - DON'T WAIT
             def log_analytics_async():
                 try:
@@ -864,6 +884,21 @@ def chatbot():
                 e=str(simulate_error.message)
             result_dict = handle_content_safety_error(trace_id=trace_id, session_id=session_id, user_id=user_id, error = e, user_message=user_message)
             result = result_dict["message"].get("content")
+
+            # Save human + AI messages to Cosmos DB longterm_memory (safety response)
+            try:
+                cosmos_messages = [
+                    {"type": "human", "content": user_message},
+                    {"type": "ai", "content": result},
+                ]
+                cosmos_chat_model.save_conversation_messages(
+                    session_id=session_id,
+                    user_id=user_id,
+                    messages=cosmos_messages,
+                )
+            except Exception as cosmos_err:
+                print(f"[chatbot] Warning: Failed to save safety response to Cosmos DB: {cosmos_err}")
+
             def log_analytics_async():
                 try:
                     stream_load(producer_events=producer_events, 
