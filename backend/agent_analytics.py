@@ -44,8 +44,7 @@ def chat_sessions_route():
     print("Handling chat sessions request...")
     if request.method == 'GET':
         # Read sessions from Cosmos DB longterm_memory
-        from shared.utils import get_user_id
-        user_id = get_user_id()
+        user_id = request.args.get('user_id', 'user_5')
         sessions = cosmos_chat_model.get_user_sessions(user_id)
         return jsonify(sessions)
     # POST still handled by existing SQL-based logic for analytics
