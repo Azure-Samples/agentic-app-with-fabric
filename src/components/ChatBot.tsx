@@ -315,8 +315,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ userId, activeTab, editingWidget, onC
               title="Switch session"
             >
               <History className="h-3.5 w-3.5" />
-              <span className="max-w-[80px] truncate">
-                {sessionId ? sessionId.replace(/^session_/, '').slice(0, 8) + '…' : 'Sessions'}
+              <span className="max-w-[100px] truncate">
+                {sessions.find(s => (s.id || s.session_id) === sessionId)?.updated_at
+                  ? formatSessionDate(sessions.find(s => (s.id || s.session_id) === sessionId)!.updated_at || sessions.find(s => (s.id || s.session_id) === sessionId)!.created_at)
+                  : 'Sessions'}
               </span>
               <ChevronDown className={`h-3 w-3 transition-transform ${isSessionDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -366,7 +368,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ userId, activeTab, editingWidget, onC
                             </span>
                           </div>
                           <p className="text-[10px] text-gray-400 truncate mt-0.5">
-                            {sid.replace(/^session_/, '').slice(0, 20)}
+                            {s.updated_at ? `Last active: ${formatSessionDate(s.updated_at)}` : s.created_at ? `Created: ${formatSessionDate(s.created_at)}` : ''}
                           </p>
                         </button>
                       );
