@@ -32,6 +32,23 @@ def save_conversation_messages(session_id: str, user_id: str, messages: list,
             "timestamp": msg.get("timestamp", now),
         })
 
+    # Auto-generate a descriptive title from the first human message
+    def _generate_title() -> str:
+        if title:
+            return title
+        # Find the first human message to use as a title snippet
+        first_human = next(
+            (m.get("content", "") for m in timestamped if m.get("type") == "human"),
+            None,
+        )
+        if first_human:
+            date_prefix = datetime.utcnow().strftime("%b %d")
+            snippet = first_human.strip()[:50]
+            if len(first_human.strip()) > 50:
+                snippet += "…"
+            return f"{date_prefix} — {snippet}"
+        return "New Session"
+
     try:
         doc = container.read_item(item=session_id, partition_key=user_id)
         # Append new messages
@@ -47,7 +64,7 @@ def save_conversation_messages(session_id: str, user_id: str, messages: list,
         doc = {
             "id": session_id,
             "user_id": user_id,
-            "title": title or "New Session",
+            "title": _generate_title(),
             "messages": timestamped,
             "created_at": now,
             "updated_at": now,
