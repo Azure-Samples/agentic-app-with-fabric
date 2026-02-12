@@ -52,7 +52,7 @@ const ChatSessions: React.FC = () => {
     
     try {
       await AnalyticsAPI.clearSession(sessionId);
-      setSessions(sessions.filter(s => s.session_id !== sessionId));
+      setSessions(sessions.filter(s => (s.id || s.session_id) !== sessionId));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete session');
     }
@@ -139,16 +139,16 @@ const ChatSessions: React.FC = () => {
         ) : (
           sessions.map((session) => (
             <div
-              key={session.session_id}
+              key={(session.id || session.session_id || '')}
               className="bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-300 transition-colors"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {session.title || `Session ${session.session_id.slice(0, 8)}`}
+                    {session.title || `Session ${(session.id || session.session_id || '').slice(0, 8)}`}
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Session ID: {session.session_id}
+                    Session ID: {(session.id || session.session_id || '')}
                   </p>
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
@@ -163,7 +163,7 @@ const ChatSessions: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                   {/* <button
-                    onClick={() => handleExportSession(session.session_id)}
+                    onClick={() => handleExportSession((session.id || session.session_id || ''))}
                     className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center gap-1"
                     disabled={!isConnected}
                   >
@@ -171,7 +171,7 @@ const ChatSessions: React.FC = () => {
                     Export
                   </button> */}
                   <button
-                    onClick={() => handleDeleteSession(session.session_id)}
+                    onClick={() => handleDeleteSession((session.id || session.session_id || ''))}
                     className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 flex items-center gap-1"
                     disabled={!isConnected}
                   >

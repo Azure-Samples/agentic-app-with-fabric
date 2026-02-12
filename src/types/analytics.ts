@@ -1,9 +1,16 @@
 export interface ChatSession {
-  session_id: string;
+  id: string;           // Cosmos DB document id (= session_id)
+  session_id?: string;  // Alias kept for backwards compat
   user_id: string;
   title: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ConversationMessage {
+  type: 'human' | 'ai';
+  content: string;
+  timestamp: string;
 }
 
 export interface ChatHistory {
