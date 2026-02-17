@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "CosmosDBDatabase",
+    "displayName": "agentic_app_db"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "09438f75-f7e2-8822-4a14-ad0b6d699a76"
+  }
+}
