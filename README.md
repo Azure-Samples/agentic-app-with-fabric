@@ -2,6 +2,10 @@
 
 #### NOTE: The main branch was last updated on: 🟢2026-02-18🟢
 
+
+![arch](assets/arch_v1.png)
+
+
 **Agentic Banking App** is an interactive web application designed to simulate a modern banking dashboard. Its primary purpose is to serve as an educational tool, demonstrating:
 - How SQL-based databases are leveraged across different types of workloads: **OLTP**, **OLAP**, **AI** workloads.
 - How agile **AI-driven analysis and insight discovery** can be enabled via prescriptive data models in Fabric.
