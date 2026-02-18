@@ -69,7 +69,7 @@ def get_support_tools():
 def get_visualization_tools(user_id: str):
     """Create visualization/widget management tools for a specific user"""
     
-    from ai_widget_model import create_widget, update_widget, delete_widget, get_widget_by_id, get_user_widgets
+    from cosmos_widget_model import create_widget, update_widget, delete_widget, get_widget_by_id, get_user_widgets
     from widget_queries import execute_widget_query
     
     @tool
@@ -126,18 +126,17 @@ def get_visualization_tools(user_id: str):
                     config["customProps"]["data"] = []
             elif data:
                 config["customProps"]["data"] = data
-            
-            with app.app_context():
-                widget = create_widget(
-                    user_id=user_id,
-                    title=title,
-                    description=description,
-                    widget_type=widget_type,
-                    config=config,
-                    code=None,
-                    data_mode=data_mode,
-                    query_config=query_config
-                )
+
+            widget = create_widget(
+                user_id=user_id,
+                title=title,
+                description=description,
+                widget_type=widget_type,
+                config=config,
+                code=None,
+                data_mode=data_mode,
+                query_config=query_config
+            )
             
             return json.dumps({
                 "status": "success",
@@ -161,48 +160,48 @@ def get_visualization_tools(user_id: str):
     ) -> str:
         """Updates an existing AI widget"""
         try:
-            with app.app_context():
-                existing = get_widget_by_id(widget_id, user_id)
-                if not existing:
-                    return json.dumps({"status": "error", "message": "Widget not found"})
-                
-                updates = {}
-                if title is not None:
-                    updates['title'] = title
-                if description is not None:
-                    updates['description'] = description
-                
-                config = existing.get('config', {})
-                config_changed = False
-                
-                if chart_type is not None:
-                    config['chartType'] = chart_type
-                    config_changed = True
-                if colors is not None:
-                    config['colors'] = colors
-                    config_changed = True
-                
-                if config_changed:
-                    updates['config'] = config
-                
-                if data_mode is not None:
-                    updates['data_mode'] = data_mode
-                
-                if query_type is not None or time_range is not None:
-                    query_config = existing.get('query_config') or {}
-                    if query_type:
-                        query_config['query_type'] = query_type
-                    if time_range:
-                        query_config['time_range'] = time_range
-                    updates['query_config'] = query_config
-                    
-                    if data_mode == 'dynamic' or existing.get('data_mode') == 'dynamic':
+            existing = get_widget_by_id(widget_id, user_id)
+            if not existing:
+                return json.dumps({"status": "error", "message": "Widget not found"})
+
+            updates = {}
+            if title is not None:
+                updates['title'] = title
+            if description is not None:
+                updates['description'] = description
+
+            config = existing.get('config', {})
+            config_changed = False
+
+            if chart_type is not None:
+                config['chartType'] = chart_type
+                config_changed = True
+            if colors is not None:
+                config['colors'] = colors
+                config_changed = True
+
+            if config_changed:
+                updates['config'] = config
+
+            if data_mode is not None:
+                updates['data_mode'] = data_mode
+
+            if query_type is not None or time_range is not None:
+                query_config = existing.get('query_config') or {}
+                if query_type:
+                    query_config['query_type'] = query_type
+                if time_range:
+                    query_config['time_range'] = time_range
+                updates['query_config'] = query_config
+
+                if data_mode == 'dynamic' or existing.get('data_mode') == 'dynamic':
+                    with app.app_context():
                         fresh_data = execute_widget_query(query_config, user_id, db.session)
-                        if 'config' not in updates:
-                            updates['config'] = config
-                        updates['config']['customProps'] = {'data': fresh_data}
-                
-                updated = update_widget(widget_id, user_id, updates)
+                    if 'config' not in updates:
+                        updates['config'] = config
+                    updates['config']['customProps'] = {'data': fresh_data}
+
+            updated = update_widget(widget_id, user_id, updates)
             
             return json.dumps({"status": "success", "message": "Widget updated"})
         except Exception as e:
@@ -230,18 +229,17 @@ def get_visualization_tools(user_id: str):
             
             config = {"chartType": "simulation", "customProps": {}}
             
-            with app.app_context():
-                widget = create_widget(
-                    user_id=user_id,
-                    title=title,
-                    description=description,
-                    widget_type="simulation",
-                    config=config,
-                    code=None,
-                    data_mode="static",
-                    query_config=None,
-                    simulation_config=simulation_config
-                )
+            widget = create_widget(
+                user_id=user_id,
+                title=title,
+                description=description,
+                widget_type="simulation",
+                config=config,
+                code=None,
+                data_mode="static",
+                query_config=None,
+                simulation_config=simulation_config
+            )
             
             return json.dumps({
                 "status": "success",
@@ -255,9 +253,8 @@ def get_visualization_tools(user_id: str):
     def list_user_widgets_tool() -> str:
         """Lists all widgets for the current user"""
         try:
-            with app.app_context():
-                widgets = get_user_widgets(user_id)
-            
+            widgets = get_user_widgets(user_id)
+
             return json.dumps({
                 "status": "success",
                 "widgets": [{"id": w['id'], "title": w['title'], "type": w['widget_type']} 
@@ -270,9 +267,8 @@ def get_visualization_tools(user_id: str):
     def delete_widget_tool(widget_id: str) -> str:
         """Deletes a widget from user's dashboard"""
         try:
-            with app.app_context():
-                success = delete_widget(widget_id, user_id)
-            
+            success = delete_widget(widget_id, user_id)
+
             return json.dumps({"status": "success" if success else "error"})
         except Exception as e:
             return json.dumps({"status": "error", "message": str(e)})

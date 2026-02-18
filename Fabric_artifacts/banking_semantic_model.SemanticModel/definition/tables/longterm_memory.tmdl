@@ -1,0 +1,94 @@
+table longterm_memory
+	lineageTag: dc8f1c5d-aa60-4996-98c5-d15386d03bf9
+	sourceLineageTag: [dbo].[longterm_memory]
+
+	column _rid
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: e21d3756-5921-48a4-a764-78af92e0e295
+		sourceLineageTag: _rid
+		summarizeBy: none
+		sourceColumn: _rid
+
+		annotation SummarizationSetBy = Automatic
+
+	column id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 7ec53c17-a838-44d7-a4b3-38d63c4bc6fe
+		sourceLineageTag: id
+		summarizeBy: none
+		sourceColumn: id
+
+		annotation SummarizationSetBy = Automatic
+
+	column user_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 2c89e04d-d9d6-432d-a55f-b8ce9a72a202
+		sourceLineageTag: user_id
+		summarizeBy: none
+		sourceColumn: user_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column title
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 2114fe5a-584e-46a3-bd02-aa3208b2f504
+		sourceLineageTag: title
+		summarizeBy: none
+		sourceColumn: title
+
+		annotation SummarizationSetBy = Automatic
+
+	column messages
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 216940dc-1c10-49a5-9434-94ab5393ebb9
+		sourceLineageTag: messages
+		summarizeBy: none
+		sourceColumn: messages
+
+		annotation SummarizationSetBy = Automatic
+
+	column created_at
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 1749bdeb-d1e5-4fbc-b993-293eb4fe72d8
+		sourceLineageTag: created_at
+		summarizeBy: none
+		sourceColumn: created_at
+
+		annotation SummarizationSetBy = Automatic
+
+	column updated_at
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: a7c32621-0551-4d3b-8639-67b95431b58b
+		sourceLineageTag: updated_at
+		summarizeBy: none
+		sourceColumn: updated_at
+
+		annotation SummarizationSetBy = Automatic
+
+	column _ts
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: b3cf94f6-b6e7-42d8-9cc7-74ce02f8f616
+		sourceLineageTag: _ts
+		summarizeBy: sum
+		sourceColumn: _ts
+
+		annotation SummarizationSetBy = Automatic
+
+	partition longterm_memory = entity
+		mode: directLake
+		source
+			entityName: longterm_memory
+			schemaName: dbo
+			expressionSource: DatabaseQuery
+
+	annotation PBI_ResultType = Table
+

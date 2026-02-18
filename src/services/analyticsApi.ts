@@ -1,9 +1,10 @@
-import type { 
-  ChatSession, 
-  // ChatHistory, 
-  // ToolUsage, 
-  ToolDefinition, 
-  // AnalyticsData 
+import type {
+  ChatSession,
+  ConversationMessage,
+  // ChatHistory,
+  // ToolUsage,
+  ToolDefinition,
+  // AnalyticsData
 } from '../types/analytics';
 
 // Analytics API runs on port 5002
@@ -20,6 +21,49 @@ export class AnalyticsAPI {
       return response.json();
     } catch (error) {
       console.error('Error fetching chat sessions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch sessions for a specific user from Cosmos DB longterm_memory.
+   */
+  static async getChatSessionsByUser(userId: string): Promise<ChatSession[]> {
+    try {
+      const response = await fetch(
+        `${ANALYTICS_API_URL}/chat/sessions?user_id=${encodeURIComponent(userId)}`
+      );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user sessions: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching user sessions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch conversation history for a session from Cosmos DB longterm_memory.
+   */
+  static async getChatHistory(sessionId: string, userId: string): Promise<ConversationMessage[]> {
+    try {
+      const response = await fetch(
+        `${ANALYTICS_API_URL}/chat/history/${encodeURIComponent(sessionId)}?user_id=${encodeURIComponent(userId)}`
+      );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch chat history: ${response.status} ${response.statusText}`);
+      }
+      // The endpoint returns [{trace_id, message_type, content, trace_end}, ...]
+      // Map to ConversationMessage shape
+      const raw = await response.json();
+      return raw.map((m: any) => ({
+        type: m.message_type === 'human' ? 'human' : 'ai',
+        content: m.content || '',
+        timestamp: m.trace_end || '',
+      }));
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
       throw error;
     }
   }

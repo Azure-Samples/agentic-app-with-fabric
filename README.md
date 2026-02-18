@@ -1,6 +1,6 @@
 # 🏦  Agentic Banking App with SQL in Fabric
 
-#### NOTE: The main branch was last updated on: 🟢2026-01-26🟢
+#### NOTE: The main branch was last updated on: 🟢2026-02-18🟢
 
 **Agentic Banking App** is an interactive web application designed to simulate a modern banking dashboard. Its primary purpose is to serve as an educational tool, demonstrating:
 - How SQL-based databases are leveraged across different types of workloads: **OLTP**, **OLAP**, **AI** workloads.
@@ -50,7 +50,7 @@ Through a hands-on interface, users can see the practical difference between wri
 | -------- | ------------------------------------- |
 | Frontend | React, Vite, TypeScript, Tailwind CSS |
 | Backend  | Python, Flask, LangChain, LangGraph   |
-| Database | Fabric SQL Database                   |
+| Database | Fabric SQL Database, Fabric Cosmos DB                   |
 | Eventstream | Fabric Eventhouse, KQL Database
 | AI       | Azure OpenAI API                      |
 
@@ -152,9 +152,21 @@ Rename the sample file: In the backend directory, find the file named **.env.sam
 
 Edit the variables: Open the new .env file and fill in the values for the following variables:
 
-**Microsoft Fabric SQL Databases**
+**Microsoft Fabric SQL Database**
 
 **FABRIC_SQL_CONNECTION_URL_AGENTIC**: This is the connection string for the SQL Database that contains both **the agentic application's operational data** (e.g., chat history) and **the sample customer banking data**. You can find this in your Fabric workspace by navigating to the SQL-endpoint of this database, clicking the "settings" -> "Connection strings" -> go to "ODBC" tab and select and copy SQL connection string.
+
+---
+
+**Microsoft Fabric Cosmos DB**
+
+**COSMOS_DB_ENDPOINT**: This is the Fabric Cosmos DB endpoint for the app. You can find this in your Fabric workspace by navigating to the Cosmos DB artifact in your workspace, clicking the "settings" -> "Connection" tab and copy the endpoint string.
+
+This Cosmos DB database has two containers: 1- **gen_ui_config** which is used for storing and retrieving configs of generated UI components (charts, simulations, etc.) for each user; and 2- **longterm_memory** container which is used for storing and retrieving conversation history per session for each user.
+
+ -->**IMPORTANT**: For authentication and connecting to the Fabric Cosmos DB database, you must first do **az login** in terminal.<--
+
+---
 
 **Microsoft Fabric Eventhub Connection**
 

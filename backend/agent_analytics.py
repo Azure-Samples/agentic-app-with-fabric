@@ -32,24 +32,42 @@ db = SQLAlchemy(app)
 init_chat_db(db)
 from chat_data_model import (
     ToolDefinition, ChatHistoryManager, AgentDefinition, AgentTrace,
-    handle_chat_sessions, 
-    clear_chat_history, clear_session_data, initialize_tool_definitions, 
+    handle_chat_sessions,
+    clear_chat_history, clear_session_data, initialize_tool_definitions,
     initialize_agent_definitions
 )
+import cosmos_chat_model
 
 # Chat History API Routes
 @app.route('/api/chat/sessions', methods=['GET', 'POST'])
 def chat_sessions_route():
     print("Handling chat sessions request...")
+    if request.method == 'GET':
+        # Read sessions from Cosmos DB longterm_memory
+        user_id = request.args.get('user_id', 'user_5')
+        sessions = cosmos_chat_model.get_user_sessions(user_id)
+        return jsonify(sessions)
+    # POST still handled by existing SQL-based logic for analytics
     return handle_chat_sessions(request)
 
 @app.route('/api/chat/history/<session_id>', methods=['GET'])
 def get_chat_history(session_id):
-    """New endpoint to retrieve chat history for a session."""
+    """Retrieve conversation history from Cosmos DB longterm_memory."""
     try:
-        # Use the ChatHistoryManager to get the history
-        chat_manager = ChatHistoryManager(session_id=session_id)
-        history = chat_manager.get_conversation_history()
+        user_id = request.args.get('user_id', 'user_5')
+        messages = cosmos_chat_model.get_conversation_history(
+            session_id=session_id, user_id=user_id
+        )
+        # Return in the same format as before for API compatibility
+        history = [
+            {
+                "trace_id": session_id,
+                "message_type": msg.get("type", "unknown"),
+                "content": msg.get("content", ""),
+                "trace_end": msg.get("timestamp"),
+            }
+            for msg in messages
+        ]
         return jsonify(history)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

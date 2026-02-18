@@ -1,11 +1,21 @@
-table ai_widgets
-	lineageTag: d6b743c5-e1d6-4118-a9dd-3c4806fbeb86
-	sourceLineageTag: [dbo].[ai_widgets]
+table gen_ui_config
+	lineageTag: 73d9d048-214a-445b-adee-1d093bad22fb
+	sourceLineageTag: [dbo].[gen_ui_config]
+
+	column _rid
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 82903891-dd27-4208-8544-7cd015554690
+		sourceLineageTag: _rid
+		summarizeBy: none
+		sourceColumn: _rid
+
+		annotation SummarizationSetBy = Automatic
 
 	column id
 		dataType: string
 		sourceProviderType: varchar(8000)
-		lineageTag: edd6ae63-e44e-48fc-b0be-420516a6eb6f
+		lineageTag: 51e7f4bb-1342-4929-8794-2abfa4fc7d59
 		sourceLineageTag: id
 		summarizeBy: none
 		sourceColumn: id
@@ -15,7 +25,7 @@ table ai_widgets
 	column user_id
 		dataType: string
 		sourceProviderType: varchar(8000)
-		lineageTag: a8ac852a-5834-40e8-ad28-9502f5709cc7
+		lineageTag: 20997abc-ab0b-49a5-87af-a826ea254e5d
 		sourceLineageTag: user_id
 		summarizeBy: none
 		sourceColumn: user_id
@@ -25,7 +35,7 @@ table ai_widgets
 	column title
 		dataType: string
 		sourceProviderType: varchar(8000)
-		lineageTag: 672044d1-860e-4a33-a022-91ceb17bb99c
+		lineageTag: 5d27d6ab-5f93-4b75-97d0-0daa6124a1ca
 		sourceLineageTag: title
 		summarizeBy: none
 		sourceColumn: title
@@ -35,7 +45,7 @@ table ai_widgets
 	column description
 		dataType: string
 		sourceProviderType: varchar(8000)
-		lineageTag: 2445b0a1-ff46-4393-b741-19f8e5da4bde
+		lineageTag: 100bd511-ece4-4cbb-88cf-0b41ead57dc5
 		sourceLineageTag: description
 		summarizeBy: none
 		sourceColumn: description
@@ -45,7 +55,7 @@ table ai_widgets
 	column widget_type
 		dataType: string
 		sourceProviderType: varchar(8000)
-		lineageTag: 5c1881fb-fe28-4043-9cfc-68c00cda1c92
+		lineageTag: d57a8b05-8d9d-40c3-889b-89306cbb3471
 		sourceLineageTag: widget_type
 		summarizeBy: none
 		sourceColumn: widget_type
@@ -55,58 +65,27 @@ table ai_widgets
 	column config
 		dataType: string
 		sourceProviderType: varchar(8000)
-		lineageTag: a61ea23c-bbf2-4445-b3c4-295eeac8f216
+		lineageTag: 7125ef1d-e231-430f-9f16-0d2373ff19dd
 		sourceLineageTag: config
 		summarizeBy: none
 		sourceColumn: config
 
 		annotation SummarizationSetBy = Automatic
 
-	column code
-		dataType: string
-		sourceProviderType: varchar(8000)
-		lineageTag: 2bc5ce78-fb78-4955-be73-92ed5f597589
-		sourceLineageTag: code
-		summarizeBy: none
-		sourceColumn: code
-
-		annotation SummarizationSetBy = Automatic
-
 	column data_mode
 		dataType: string
 		sourceProviderType: varchar(8000)
-		lineageTag: be733c70-2b1a-4a36-854c-ecf6710e8deb
+		lineageTag: 1dcc565d-f87c-4b9b-bda0-ee28a2e06509
 		sourceLineageTag: data_mode
 		summarizeBy: none
 		sourceColumn: data_mode
 
 		annotation SummarizationSetBy = Automatic
 
-	column query_config
-		dataType: string
-		sourceProviderType: varchar(8000)
-		lineageTag: b6bb0afe-63a8-4f89-a320-92fd0fe67cf5
-		sourceLineageTag: query_config
-		summarizeBy: none
-		sourceColumn: query_config
-
-		annotation SummarizationSetBy = Automatic
-
-	column last_refreshed
-		dataType: dateTime
-		formatString: General Date
-		sourceProviderType: datetime2
-		lineageTag: 4b44b5c5-5a5c-4602-bf5c-8e01fb17c3b6
-		sourceLineageTag: last_refreshed
-		summarizeBy: none
-		sourceColumn: last_refreshed
-
-		annotation SummarizationSetBy = Automatic
-
 	column simulation_config
 		dataType: string
 		sourceProviderType: varchar(8000)
-		lineageTag: 3cfe24ef-801e-46c3-a175-95571fccc5b5
+		lineageTag: eab8e9b8-787e-4fe3-abd3-175d3cc3817b
 		sourceLineageTag: simulation_config
 		summarizeBy: none
 		sourceColumn: simulation_config
@@ -114,10 +93,9 @@ table ai_widgets
 		annotation SummarizationSetBy = Automatic
 
 	column created_at
-		dataType: dateTime
-		formatString: General Date
-		sourceProviderType: datetime2
-		lineageTag: 98c2791d-86a0-4e20-9e91-e132e1e399d5
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: c644cf86-e583-41ce-8d39-dd01ce4d7b96
 		sourceLineageTag: created_at
 		summarizeBy: none
 		sourceColumn: created_at
@@ -125,20 +103,30 @@ table ai_widgets
 		annotation SummarizationSetBy = Automatic
 
 	column updated_at
-		dataType: dateTime
-		formatString: General Date
-		sourceProviderType: datetime2
-		lineageTag: ebdd36d3-a4c8-48f1-82c6-ea1b367140a7
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: b3d4892e-d81e-47c1-945a-34ea408687af
 		sourceLineageTag: updated_at
 		summarizeBy: none
 		sourceColumn: updated_at
 
 		annotation SummarizationSetBy = Automatic
 
-	partition ai_widgets = entity
+	column _ts
+		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: c9a31a85-b8d7-4318-aab2-8a3e9fd95149
+		sourceLineageTag: _ts
+		summarizeBy: sum
+		sourceColumn: _ts
+
+		annotation SummarizationSetBy = Automatic
+
+	partition gen_ui_config = entity
 		mode: directLake
 		source
-			entityName: ai_widgets
+			entityName: gen_ui_config
 			schemaName: dbo
 			expressionSource: DatabaseQuery
 
