@@ -52,6 +52,32 @@
     }
   },
   {
+    "name": "longterm_memory",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/agentic_cosmos_db/longterm_memory",
+        "itemId": "87fcaa33-7ad6-b4ca-4394-25e7ce7118b7",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "CosmosDB"
+      }
+    }
+  },
+  {
+    "name": "gen_ui_config",
+    "path": "/Tables",
+    "target": {
+      "type": "OneLake",
+      "oneLake": {
+        "path": "Tables/agentic_cosmos_db/gen_ui_config",
+        "itemId": "87fcaa33-7ad6-b4ca-4394-25e7ce7118b7",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "artifactType": "CosmosDB"
+      }
+    }
+  },
+  {
     "name": "chat_sessions",
     "path": "/Tables",
     "target": {
@@ -71,19 +97,6 @@
       "type": "OneLake",
       "oneLake": {
         "path": "Tables/dbo/chat_history",
-        "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
-        "workspaceId": "00000000-0000-0000-0000-000000000000",
-        "artifactType": "SQLDbNative"
-      }
-    }
-  },
-  {
-    "name": "ai_widgets",
-    "path": "/Tables",
-    "target": {
-      "type": "OneLake",
-      "oneLake": {
-        "path": "Tables/dbo/ai_widgets",
         "itemId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
         "workspaceId": "00000000-0000-0000-0000-000000000000",
         "artifactType": "SQLDbNative"

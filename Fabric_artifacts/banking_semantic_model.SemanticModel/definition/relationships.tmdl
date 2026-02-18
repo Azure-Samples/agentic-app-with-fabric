@@ -26,12 +26,6 @@ relationship 94f0a777-f28a-6241-0ad4-6d0603defd90
 	fromColumn: chat_sessions.user_id
 	toColumn: users.id
 
-relationship 73fd0b4e-b609-5455-312c-7fbf50b379b5
-	crossFilteringBehavior: bothDirections
-	fromCardinality: one
-	fromColumn: session_duration_date.session_id
-	toColumn: chat_sessions.session_id
-
 relationship e79599ac-c010-e2a3-3d7d-17de675e33bc
 	fromColumn: transactions.to_account_id
 	toColumn: accounts.id
@@ -41,15 +35,13 @@ relationship f3b4cada-c019-f38f-4aab-26d5e15a5b61
 	fromColumn: transactions.from_account_id
 	toColumn: accounts.id
 
-relationship fbf498c5-d943-8165-b52f-05fc9b9fcfbf
-	fromColumn: ai_widgets.user_id
+relationship f18a06b1-7510-ed55-4b7e-ee72584ba2ac
+	fromColumn: gen_ui_config.user_id
 	toColumn: users.id
 
-relationship 739e8f9e-786c-d181-74b8-9f447b270cee
-	fromColumn: chat_history.trace_id
-	toColumn: ContentIssues.trace_id
-
-relationship 743ed9fa-5217-9853-2c00-f5f6d3df735d
-	fromColumn: chat_history.trace_id
-	toColumn: UserAsks.trace_id
+relationship 26aa0c09-5b6b-a1c8-e56d-52d4cf8d3e0a
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: longterm_memory.id
+	toColumn: chat_sessions.session_id
 
