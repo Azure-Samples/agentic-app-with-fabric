@@ -31,7 +31,7 @@ def _get_database():
     global _database
     if _database is None:
         client = _get_client()
-        db_name = os.getenv("COSMOS_DB_DATABASE_NAME", "agentic_app_db")
+        db_name = os.getenv("COSMOS_DB_DATABASE_NAME", "agentic_cosmos_db")
         _database = client.create_database_if_not_exists(id=db_name)
     return _database
 
