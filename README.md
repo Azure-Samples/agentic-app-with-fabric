@@ -1,10 +1,53 @@
-# 🏦  Agentic Banking App with SQL in Fabric
+# 🏦  Agentic Banking App with Microsoft Fabric
 
 #### NOTE: The main branch was last updated on: 🟢2026-02-18🟢
+<!-- Auto-updated by Markdown All in One -->
+## 📑 Table of Contents
+
+<!-- TOC -->
 
 
-![arch](assets/arch_v1.png)
 
+- [🏦  Agentic Banking App with Microsoft Fabric](#--agentic-banking-app-with-microsoft-fabric)
+      - [NOTE: The main branch was last updated on: 🟢2026-02-18🟢](#note-the-main-branch-was-last-updated-on-2026-02-18)
+  - [📑 Table of Contents](#-table-of-contents)
+    - [Intro](#intro)
+    - [Architecture \& Tech Stack](#architecture--tech-stack)
+  - [**Test the live app here:** https://aka.ms/HostedAgenticAppFabric](#test-the-live-app-here-httpsakamshostedagenticappfabric)
+  - [✨ Features](#-features)
+    - [Banking Application](#banking-application)
+      - [How it works:](#how-it-works)
+    - [Agent Analytics Service](#agent-analytics-service)
+    - [Agentic app insights and analytics in Fabric](#agentic-app-insights-and-analytics-in-fabric)
+  - [Demo: Setting up SQL Agentic Application on Microsoft Fabric](#demo-setting-up-sql-agentic-application-on-microsoft-fabric)
+  - [🔧 Prerequisites](#-prerequisites)
+  - [Set up required resources (One time)](#set-up-required-resources-one-time)
+    - [1. Set up your repo](#1-set-up-your-repo)
+    - [2. Set up your Fabric account](#2-set-up-your-fabric-account)
+    - [3. Automatic set up of all required Fabric resources and artifacts](#3-automatic-set-up-of-all-required-fabric-resources-and-artifacts)
+      - [Step 1: Set up your database in Fabric](#step-1-set-up-your-database-in-fabric)
+      - [Step 2: Re-deploy to connect semantic model to the right database endpoint](#step-2-re-deploy-to-connect-semantic-model-to-the-right-database-endpoint)
+    - [4. Add extra views to Lakehouse's SQL analytics endpoint](#4-add-extra-views-to-lakehouses-sql-analytics-endpoint)
+      - [After above steps are done, below is what you should see in the lineage view of your workspace:](#after-above-steps-are-done-below-is-what-you-should-see-in-the-lineage-view-of-your-workspace)
+  - [Follow below steps to run the app locally!](#follow-below-steps-to-run-the-app-locally)
+    - [1. Configure Environment Variables](#1-configure-environment-variables)
+    - [2. Install Backend Requirements (Flask API)](#2-install-backend-requirements-flask-api)
+    - [3. Configure the Frontend (React + Vite)](#3-configure-the-frontend-react--vite)
+    - [4. Run the Application](#4-run-the-application)
+      - [Terminal 1: Start Backend](#terminal-1-start-backend)
+      - [Terminal 2: Start Frontend](#terminal-2-start-frontend)
+  - [Testing Real-time Monitoring](#testing-real-time-monitoring)
+    - [Follow below steps to finalize real-time intelligence pipeline in Fabric](#follow-below-steps-to-finalize-real-time-intelligence-pipeline-in-fabric)
+      - [Connect your Eventhouse database to the Eventstream](#connect-your-eventhouse-database-to-the-eventstream)
+      - [Add content safety views to the Real-Time Dashboard](#add-content-safety-views-to-the-real-time-dashboard)
+  - [Explore Agentic Analytics](#explore-agentic-analytics)
+  - [Explore how to create and Ingest Embeddings from PDF (optional)](#explore-how-to-create-and-ingest-embeddings-from-pdf-optional)
+  - [Evaluate agent performance via Azure Evaluation Framework (Optional)](#evaluate-agent-performance-via-azure-evaluation-framework-optional)
+  - [Contributing](#contributing)
+
+<!-- /TOC -->
+
+### Intro
 
 **Agentic Banking App** is an interactive web application designed to simulate a modern banking dashboard. Its primary purpose is to serve as an educational tool, demonstrating:
 - How SQL-based databases are leveraged across different types of workloads: **OLTP**, **OLAP**, **AI** workloads.
@@ -12,6 +55,23 @@
 - How easy it is possible to **integrate other Fabric workloads** (e.g., Report, Data Agent, Notebook) leveraging that data model.
 
 Through a hands-on interface, users can see the practical difference between writing a new transaction to the database, running complex analytical queries on historical data, and using natural language to ask an agent to query the database for them.
+
+### Architecture & Tech Stack
+
+![arch](assets/arch_v1.png)
+
+
+
+| Layer    | Technology                            |
+| -------- | ------------------------------------- |
+| Frontend | React, Vite, TypeScript, Tailwind CSS |
+| Backend  | Python, Flask, LangChain, LangGraph   |
+| Database | Fabric SQL Database, Fabric Cosmos DB                   |
+| Eventstream | Fabric Eventhouse, KQL Database
+| AI       | Azure OpenAI API                      |
+
+---
+
 
 **Test the live app here:** https://aka.ms/HostedAgenticAppFabric
 ---
@@ -27,7 +87,7 @@ Through a hands-on interface, users can see the practical difference between wri
 - **Financial Analytics (OLAP)**: Explore an analytics dashboard with charts and summaries of spending habits. This represents an OLAP workload, running complex, aggregate queries over a large dataset.
 - **Generative UI**: User can ask for a personalized interactive visualization/simulations to be created on the fly! The custom visualizaton will be generated via an expert agent, and the relevant configuration will be saved in the database for that user profile so that it can be retrieved every time this user logs in. Generated visualizations can also be edited upon user request.
 
-### How it works:
+#### How it works:
 - **Multi-Agent Workload**: The app is built on top of a multi-agent solution in Langgraph. There are four distinct agents:
     1. **Coordinator agent**: this agent is responsible for assessing user request and passing it to the relevant specialized agent,
     2. **Support agent**: this agent is specialized in answering general customer service questions via RAG.
@@ -48,17 +108,7 @@ Through a hands-on interface, users can see the practical difference between wri
 - As the app is used, the agentic operational data is captured, modeled, and used to reflect valuable analytics and insights via Fabric features such as Power BI reports, data agent, notebooks, real-time dashboards, etc.
 ---
 
-## 🛠️ Tech Stack
 
-| Layer    | Technology                            |
-| -------- | ------------------------------------- |
-| Frontend | React, Vite, TypeScript, Tailwind CSS |
-| Backend  | Python, Flask, LangChain, LangGraph   |
-| Database | Fabric SQL Database, Fabric Cosmos DB                   |
-| Eventstream | Fabric Eventhouse, KQL Database
-| AI       | Azure OpenAI API                      |
-
----
 
 ## Demo: Setting up SQL Agentic Application on Microsoft Fabric
 
@@ -145,6 +195,10 @@ The initial application data will be automatically populated, if not existing, i
 - Go to **Data_Ingest** folder and run all 3 queries that you see in file **views.sql**:
 
     ![lakehouse](assets/views.png)
+
+#### After above steps are done, below is what you should see in the lineage view of your workspace:
+
+![lineage](assets/fab_lineage.png)
 
 ## Follow below steps to run the app locally!
 Now that all resources are set up, follow below steps to run and test the app:
