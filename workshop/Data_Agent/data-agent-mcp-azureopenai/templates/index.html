@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fabric Data Agent - Azure OpenAI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #faf7f0;
+            color: #1c4e4e;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 3px solid #1c4e4e;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #3a7f7f;
+            font-weight: 500;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e8e6dd;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background-color: #e8e6dd;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1c4e4e;
+            transition: all 0.3s;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab.active {
+            background-color: #1c4e4e;
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            background-color: #3a7f7f;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            background-color: white;
+            border-radius: 0 8px 8px 8px;
+            box-shadow: 0 2px 10px rgba(28, 78, 78, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h3 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8e6dd;
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #1c4e4e;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e8e6dd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #1c4e4e;
+        }
+
+        button {
+            padding: 12px 30px;
+            background-color: #1c4e4e;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #163d3d;
+        }
+
+        button.secondary {
+            background-color: #3a7f7f;
+        }
+
+        button.secondary:hover {
+            background-color: #2a6f6f;
+        }
+
+        .status {
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .chat-container {
+            height: 500px;
+            overflow-y: auto;
+            border: 2px solid #e8e6dd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background-color: #faf7f0;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background-color: #1c4e4e;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.agent {
+            background-color: white;
+            border: 2px solid #e8e6dd;
+        }
+
+        .message-label {
+            font-weight: 700;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .message-text {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row input {
+            flex: 1;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #3a7f7f;
+            font-style: italic;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .help-text {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+
+            .message {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Fabric Data Agent</h1>
+            <div class="subtitle">Interactive Query Interface with Azure OpenAI</div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="openTab('setup')">🔐 Setup & Configuration</button>
+            <button class="tab" onclick="openTab('chat')">💬 Query Interface</button>
+        </div>
+
+        <div id="setup" class="tab-content active">
+            <div class="section">
+                <h3>Step 1: Authenticate with Fabric</h3>
+                <p style="margin-bottom: 15px; color: #3a7f7f;">Click to sign in with Microsoft. A browser window will open for authentication.</p>
+                <button onclick="authenticate()" id="auth-btn">Authenticate with Microsoft</button>
+                <div id="auth-status" class="status"></div>
+            </div>
+
+            <div class="section">
+                <h3>Step 2: Configure MCP Server</h3>
+                <div class="form-group">
+                    <label for="server-name">MCP Server Name</label>
+                    <input type="text" id="server-name" placeholder="e.g., Fabric DataA1 MCP server" value="">
+                </div>
+                <div class="form-group">
+                    <label for="server-url">MCP Server URL</label>
+                    <input type="text" id="server-url" placeholder="https://msitapi.fabric.microsoft.com/v1/mcp/workspaces/.../dataagents/.../agent" value="">
+                </div>
+                <div class="form-group">
+                    <label for="tool-name">MCP Server Tool Name</label>
+                    <input type="text" id="tool-name" placeholder="e.g., DataAgent_DataA1" value="">
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Step 3: Configure Azure OpenAI</h3>
+                <div class="form-group">
+                    <label for="api-key">Azure OpenAI API Key</label>
+                    <input type="password" id="api-key" placeholder="Your Azure OpenAI API key" value="">
+                    <div class="help-text">Find this in Azure Portal > Your OpenAI Resource > Keys and Endpoint</div>
+                </div>
+                <div class="form-group">
+                    <label for="azure-endpoint">Azure OpenAI Endpoint</label>
+                    <input type="text" id="azure-endpoint" placeholder="https://your-resource.openai.azure.com" value="">
+                    <div class="help-text">Example: https://your-resource.openai.azure.com (without trailing slash)</div>
+                </div>
+                <div class="form-group">
+                    <label for="deployment-name">Deployment Name</label>
+                    <input type="text" id="deployment-name" placeholder="e.g., gpt-4, gpt-35-turbo" value="">
+                    <div class="help-text">The name of your Azure OpenAI deployment (not the model name)</div>
+                </div>
+                <button onclick="validateConfig()">✅ Validate & Setup Agent</button>
+                <div id="config-status" class="status"></div>
+            </div>
+        </div>
+
+        <div id="chat" class="tab-content">
+            <div class="section">
+                <h3>Ask questions about your data</h3>
+                <div id="chat-container" class="chat-container"></div>
+                <div id="loading" class="loading">Thinking...</div>
+                <div class="input-row">
+                    <input type="text" id="question-input" placeholder="e.g., Give me top stores by margin" onkeypress="if(event.key==='Enter') askQuestion()">
+                    <button onclick="askQuestion()">Send</button>
+                    <button class="secondary" onclick="clearChat()">🗑️ Clear</button>
+                </div>
+                <p style="margin-top: 15px; color: #3a7f7f; font-size: 14px;">💡 <strong>Tip:</strong> Make sure to complete authentication and configuration before asking questions.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function showStatus(elementId, message, isError = false) {
+            const status = document.getElementById(elementId);
+            status.textContent = message;
+            status.className = 'status ' + (isError ? 'error' : 'success');
+        }
+
+        async function authenticate() {
+            try {
+                showStatus('auth-status', 'Opening login window... Please sign in.', false);
+                document.getElementById('auth-btn').disabled = true;
+
+                // Start authentication
+                const response = await fetch('/authenticate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                const data = await response.json();
+
+                if (data.status === 'pending') {
+                    // Poll for status
+                    const pollInterval = setInterval(async () => {
+                        const statusResponse = await fetch('/auth_status');
+                        const statusData = await statusResponse.json();
+
+                        if (statusData.status === 'success') {
+                            clearInterval(pollInterval);
+                            showStatus('auth-status', statusData.message, false);
+                            document.getElementById('auth-btn').disabled = false;
+                        } else if (statusData.status === 'error') {
+                            clearInterval(pollInterval);
+                            showStatus('auth-status', statusData.message, true);
+                            document.getElementById('auth-btn').disabled = false;
+                        } else {
+                            showStatus('auth-status', statusData.message, false);
+                        }
+                    }, 1000); // Poll every second
+                } else {
+                    showStatus('auth-status', data.message, data.status === 'error');
+                    document.getElementById('auth-btn').disabled = false;
+                }
+            } catch (error) {
+                showStatus('auth-status', 'Error: ' + error.message, true);
+                document.getElementById('auth-btn').disabled = false;
+            }
+        }
+
+        async function validateConfig() {
+            try {
+                const config = {
+                    server_name: document.getElementById('server-name').value,
+                    server_url: document.getElementById('server-url').value,
+                    tool_name: document.getElementById('tool-name').value,
+                    api_key: document.getElementById('api-key').value,
+                    azure_endpoint: document.getElementById('azure-endpoint').value,
+                    deployment_name: document.getElementById('deployment-name').value
+                };
+
+                showStatus('config-status', 'Validating configuration...', false);
+                const response = await fetch('/validate_config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                });
+                const data = await response.json();
+                showStatus('config-status', data.message, data.status === 'error');
+            } catch (error) {
+                showStatus('config-status', 'Error: ' + error.message, true);
+            }
+        }
+
+        async function askQuestion() {
+            const questionInput = document.getElementById('question-input');
+            const question = questionInput.value.trim();
+
+            if (!question) return;
+
+            const chatContainer = document.getElementById('chat-container');
+            const loading = document.getElementById('loading');
+
+            // Add user message
+            chatContainer.innerHTML += `
+                <div class="message user">
+                    <div class="message-label">You</div>
+                    <div class="message-text">${escapeHtml(question)}</div>
+                </div>
+            `;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            questionInput.value = '';
+            loading.classList.add('show');
+
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({question})
+                });
+                const data = await response.json();
+
+                loading.classList.remove('show');
+
+                if (data.status === 'success') {
+                    chatContainer.innerHTML += `
+                        <div class="message agent">
+                            <div class="message-label">Agent 🤖</div>
+                            <div class="message-text">${escapeHtml(data.answer)}</div>
+                        </div>
+                    `;
+                } else {
+                    chatContainer.innerHTML += `
+                        <div class="message agent">
+                            <div class="message-label">Agent 🤖</div>
+                            <div class="message-text" style="color: #721c24;">${escapeHtml(data.message)}</div>
+                        </div>
+                    `;
+                }
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            } catch (error) {
+                loading.classList.remove('show');
+                chatContainer.innerHTML += `
+                    <div class="message agent">
+                        <div class="message-label">Agent 🤖</div>
+                        <div class="message-text" style="color: #721c24;">Error: ${escapeHtml(error.message)}</div>
+                    </div>
+                `;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        async function clearChat() {
+            try {
+                await fetch('/clear', {method: 'POST'});
+                document.getElementById('chat-container').innerHTML = '';
+            } catch (error) {
+                console.error('Error clearing chat:', error);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
