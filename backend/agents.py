@@ -7,7 +7,7 @@ Each function creates a specialized agent with its tools and prompt
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from banking_app import ai_client
-from agent_tools import get_account_tools, get_support_tools, get_visualization_tools
+from agent_tools import get_account_tools, get_support_tools, get_visualization_tools, get_fabric_data_agent_tools
 
 
 
@@ -148,6 +148,48 @@ def create_visualization_agent(user_id: str, widget_instructions: str):
 
 
 # ============================================
+# FABRIC DATA AGENT
+# ============================================
+
+def create_fabric_data_agent(user_id: str):
+    """Agent specialized in read-only data queries via the Fabric Data Agent endpoint"""
+    llm = ai_client
+    tools = get_fabric_data_agent_tools(user_id)
+
+    system_prompt = f"""You are a read-only data analyst assistant for a banking application.
+
+**IMPORTANT: You are currently helping user_id: {user_id}**
+All queries must be scoped to this user only.
+
+You have access to the Fabric Data Agent (`query_fabric_data_agent`) which can answer
+natural-language questions about account balances, transaction history, spending patterns,
+and other banking data stored in Microsoft Fabric.
+
+## How to Use the Tool ##
+- Pass the user's question directly to `query_fabric_data_agent`.
+- The tool will scope the query to user_id '{user_id}' automatically.
+- You may rephrase the question to be more precise if needed.
+
+## Capabilities ##
+- Account balances and account details
+- Transaction history and summaries
+- Spending by category or merchant
+- Income vs. expense analysis
+- Any other read-only data questions about the user's finances
+
+## Restrictions ##
+- This agent is **read-only**. Do NOT attempt to create accounts, transfer money, or
+  modify any data. Direct write-operation requests to the account management agent.
+
+## Response Formatting ##
+- Be concise and present results clearly (bullet lists, tables where appropriate).
+- Do not expose internal tool call details or raw JSON to the user.
+"""
+
+    return create_react_agent(llm, tools, prompt=system_prompt, checkpointer=MemorySaver())
+
+
+# ============================================
 # COORDINATOR (No tools, just routing)
 # ============================================
 
@@ -158,12 +200,22 @@ def create_coordinator_agent():
     routing_prompt = """You are a routing coordinator. Analyze the request and respond with ONLY the agent name.
 
                     ## Routing Rules ##
-                    - For tasks and queries related to Account management/money/transaction/balance/spending/transfers → respond: "account_agent"
-                    - For policy questions /general questions/support → respond: "support_agent"
+                    - For READ-ONLY data questions about accounts/transactions/balances/spending/history → respond: "fabric_agent"
+                    - For WRITE operations like creating accounts, transferring money → respond: "account_agent"
+                    - For policy questions/general questions/support → respond: "support_agent"
                     - For requests related to Visualization/chart/widget/simulation → respond: "visualization_agent"
 
+                    ## Examples ##
+                    - "What are my recent transactions?" → "fabric_agent"
+                    - "Show me my account balances" → "fabric_agent"
+                    - "How much did I spend last month?" → "fabric_agent"
+                    - "Transfer $100 to my savings" → "account_agent"
+                    - "Create a new checking account" → "account_agent"
+                    - "What is your refund policy?" → "support_agent"
+                    - "Create a spending chart" → "visualization_agent"
+
                     ## Output Format ##
-                    Respond with ONLY: "account_agent" or "support_agent" or "visualization_agent"
+                    Respond with ONLY: "fabric_agent" or "account_agent" or "support_agent" or "visualization_agent"
                     Do NOT add any other text, explanation, or formatting."""
     
     return create_react_agent(llm, [], prompt=routing_prompt, checkpointer=MemorySaver())

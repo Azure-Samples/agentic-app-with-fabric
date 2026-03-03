@@ -5,7 +5,13 @@ from langgraph.checkpoint.memory import MemorySaver
 import time
 
 # Import existing banking infrastructure
-from agents import create_account_management_agent, create_support_agent, create_visualization_agent, create_coordinator_agent
+from agents import (
+    create_account_management_agent,
+    create_support_agent,
+    create_visualization_agent,
+    create_coordinator_agent,
+    create_fabric_data_agent,
+)
 
 # Multi-Agent State
 class BankingAgentState(TypedDict):
@@ -40,7 +46,7 @@ def coordinator_node(state: BankingAgentState):
     
     # Use keyword-based routing for speed and reliability
     message_lower = state["final_result"].lower()
-    
+
     if message_lower == "visualization_agent":
         state["pass_to"] = "visualization_agent"
         state["task_type"] = "visualization_management"
@@ -49,6 +55,10 @@ def coordinator_node(state: BankingAgentState):
         state["pass_to"] = "account_agent"
         state["task_type"] = "account_management"
         print(f"[COORDINATOR] Routing to: account_agent")
+    elif message_lower == "fabric_agent":
+        state["pass_to"] = "fabric_agent"
+        state["task_type"] = "fabric_data_query"
+        print(f"[COORDINATOR] Routing to: fabric_agent")
     else:
         state["pass_to"] = "support_agent"
         state["task_type"] = "customer_support"
@@ -116,6 +126,27 @@ def visualization_agent_node(state: BankingAgentState):
     
     return state
 
+def fabric_agent_node(state: BankingAgentState):
+    """Handle read-only data queries via the Fabric Data Agent."""
+    user_id = state["user_id"]
+    fabric_agent = create_fabric_data_agent(user_id)
+
+    thread_config = {"configurable": {"thread_id": f"fabric_{state['session_id']}"}}
+
+    start_time = time.time()
+    response = fabric_agent.invoke({"messages": state["messages"]}, config=thread_config)
+    finish_time = time.time()
+    time_taken = finish_time - start_time
+
+    state["current_agent"] = "fabric_agent"
+    state["pass_to"] = None
+    state["messages"] = response["messages"]
+    state["final_result"] = response["messages"][-1].content
+    state["time_taken"] = time_taken
+
+    return state
+
+
 # Create Multi-Agent Banking System
 
 def create_multi_agent_banking_system():
@@ -128,6 +159,7 @@ def create_multi_agent_banking_system():
     workflow.add_node("account_agent", account_agent_node)
     workflow.add_node("support_agent", support_agent_node)
     workflow.add_node("visualization_agent", visualization_agent_node)
+    workflow.add_node("fabric_agent", fabric_agent_node)
 
     # Set entry point
     workflow.set_entry_point("coordinator")
@@ -142,14 +174,16 @@ def create_multi_agent_banking_system():
         {
             "account_agent": "account_agent",
             "support_agent": "support_agent",
-            "visualization_agent": "visualization_agent"
+            "visualization_agent": "visualization_agent",
+            "fabric_agent": "fabric_agent",
         }
     )
-    
+
     # All agents end the workflow
     workflow.add_edge("account_agent", END)
     workflow.add_edge("support_agent", END)
     workflow.add_edge("visualization_agent", END)
+    workflow.add_edge("fabric_agent", END)
     
     return workflow.compile(checkpointer=MemorySaver())
 

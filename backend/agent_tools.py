@@ -280,3 +280,13 @@ def get_visualization_tools(user_id: str):
         list_user_widgets_tool,
         delete_widget_tool
     ]
+
+
+# ============================================
+# FABRIC DATA AGENT TOOLS
+# ============================================
+
+def get_fabric_data_agent_tools(user_id: str):
+    """Create Fabric Data Agent tools for a specific user"""
+    from tools.fabric_data_agent_tool import get_fabric_data_agent_tools as _get_tools
+    return _get_tools(user_id)
