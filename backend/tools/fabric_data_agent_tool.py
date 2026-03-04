@@ -9,6 +9,8 @@ import os
 import requests
 from langchain_core.tools import tool
 from azure.identity import DefaultAzureCredential
+from dotenv import load_dotenv
+load_dotenv(override=True)
 
 FABRIC_SCOPE = "https://analysis.windows.net/powerbi/api/.default"
 
@@ -27,6 +29,7 @@ def _get_fabric_token() -> str:
     if _credential is None:
         _credential = DefaultAzureCredential()
     token = _credential.get_token(FABRIC_SCOPE)
+    print("Acquired Fabric token")
     return token.token
 
 
@@ -77,11 +80,12 @@ def get_fabric_data_agent_tools(user_id: str):
     The server URL and tool name are read from environment variables so that
     they can be set per-deployment without code changes:
 
-        FABRIC_DATA_AGENT_SERVER_URL  – e.g. https://<workspace>.fabric.microsoft.com/...
-        FABRIC_DATA_AGENT_TOOL_NAME   – the MCP tool name registered in Fabric
+        FABRIC_DATA_AGENT_SERVER_URL  e.g. https://<workspace>.fabric.microsoft.com/...
+        FABRIC_DATA_AGENT_TOOL_NAME   the MCP tool name registered in Fabric
     """
     server_url = os.getenv("FABRIC_DATA_AGENT_SERVER_URL", "")
     tool_name = os.getenv("FABRIC_DATA_AGENT_TOOL_NAME", "")
+    print("Configuring Fabric Data Agent Tool")
 
     @tool
     def query_fabric_data_agent(question: str) -> str:
