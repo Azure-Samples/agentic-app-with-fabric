@@ -1,7 +1,6 @@
 """
 Fabric Data Agent Tool
-Calls the Microsoft Fabric Data Agent endpoint using a Bearer token,
-mirroring the pattern from the standalone app.py reference implementation.
+Calls the Microsoft Fabric Data Agent endpoint using a Bearer token
 """
 
 import json
@@ -37,8 +36,7 @@ def _call_fabric_data_agent(question: str, server_url: str, tool_name: str) -> s
     """POST a natural-language question to the Fabric Data Agent MCP endpoint.
 
     The endpoint returns Server-Sent Events (SSE). We iterate over the lines and
-    extract the first `data:` frame that contains a non-empty result, exactly as
-    the reference app.py does.
+    extract the first `data:` frame that contains a non-empty result.
     """
     headers = {
         "Authorization": f"Bearer {_get_fabric_token()}",
