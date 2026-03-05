@@ -1,7 +1,7 @@
 <!-- omit from toc -->
 # 🏦  Agentic Banking App with Microsoft Fabric
 <!-- omit from toc -->
-#### NOTE: The main branch was last updated on: 🟢2026-02-19🟢
+#### NOTE: The main branch was last updated on: 🟢2026-03-05 -- Critical fix in chat_data_model.py due to langchain updates!🟢
 <!-- Auto-updated by Markdown All in One -->
 <!-- omit from toc -->
 ## 📑 Table of Contents
