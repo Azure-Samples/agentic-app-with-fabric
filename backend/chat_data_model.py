@@ -345,6 +345,11 @@ def init_chat_db(database):
             Get existing tool definition or create a new one on-the-fly
             Returns: tool_id
             """
+            # Guard against None tool_name (happens when an AI message has no
+            # tool_calls, or when the tool call structure is missing 'name')
+            if not tool_name:
+                print(f"[ChatHistoryManager] Skipping tool definition creation: tool_name is None")
+                return None
             try:
                 existing = ToolDefinition.query.filter_by(name=tool_name).first()
                 
@@ -496,25 +501,63 @@ def init_chat_db(database):
             return entry_message
 
         def add_tool_call_message(self, message: dict, trace_id: str, agent_name: str, routing_step: int):
-            """Log a tool call"""
+            """Log a tool call.
+
+            LangChain serialises tool-call information in two possible locations
+            depending on the LangChain / Azure OpenAI SDK version in use:
+
+            • OpenAI wire format  – message["additional_kwargs"]["tool_calls"][0]
+                                    {"function": {"name": "...", "arguments": "..."}, "id": "..."}
+            • LangChain native   – message["tool_calls"][0]
+                                    {"name": "...", "args": {...}, "id": "..."}
+
+            We try the OpenAI format first and fall back to the LangChain native
+            format so that auto-registration works regardless of which path is used.
+            """
+            # --- helpers to read from both formats ----------------------------
+            def _openai_tc(msg):
+                """First entry from additional_kwargs.tool_calls (OpenAI format)."""
+                tcs = msg.get("additional_kwargs", {}).get("tool_calls")
+                if tcs and isinstance(tcs, list):
+                    return tcs[0] if isinstance(tcs[0], dict) else {}
+                return {}
+
+            def _lc_tc(msg):
+                """First entry from top-level tool_calls (LangChain native format)."""
+                tcs = msg.get("tool_calls")
+                if tcs and isinstance(tcs, list):
+                    return tcs[0] if isinstance(tcs[0], dict) else {}
+                return {}
+
+            otc = _openai_tc(message)   # OpenAI-format tool call dict
+            ltc = _lc_tc(message)       # LangChain-format tool call dict
+
+            # name: OpenAI stores it under function.name; LangChain stores it at top level
+            tool_name = (
+                otc.get("function", {}).get("name")
+                or ltc.get("name")
+            )
+
+            # id: both formats store it as "id" on the tool call dict
+            tool_call_id = otc.get("id") or ltc.get("id")
+
+            # arguments/input: OpenAI stores a JSON string under function.arguments;
+            # LangChain stores a dict under args
+            tool_input = (
+                otc.get("function", {}).get("arguments")
+                or ltc.get("args")
+            )
+
+            # ------------------------------------------------------------------
             agent_id = None
-            if agent_name!="system":
-                # Auto-create agent if doesn't exist
-                agent_id = self.get_or_create_agent_definition(
-                    agent_name=agent_name
-                )
+            if agent_name != "system":
+                agent_id = self.get_or_create_agent_definition(agent_name=agent_name)
 
-            tool_name = message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('function', {}).get("name")
-
-
-            # Auto-create tool if doesn't exist
+            # Auto-create tool definition if it doesn't exist yet
             tool_id = self.get_or_create_tool_definition(
                 tool_name=tool_name,
                 description=f"Tool used by {agent_name or 'unknown agent'}"
             )
-            # print("**********************************")
-            # print("tool id:", tool_id)
-            # print("agent id:", agent_id)
 
             entry_message = ChatHistory(
                 message_id=message["id"],
@@ -526,12 +569,12 @@ def init_chat_db(database):
                 message_type='tool_call',
                 routing_step=routing_step,
                 tool_id=tool_id,
-                tool_call_id=message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('id'),
+                tool_call_id=tool_call_id,
                 tool_name=tool_name,
                 total_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
                 completion_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
                 prompt_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
-                tool_input=message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('function', {}).get("arguments"),
+                tool_input=tool_input,
                 model_name=message.get("response_metadata", {}).get('model_name'),
                 content_filter_results=message.get("response_metadata", {}).get("prompt_filter_results", [{}])[0].get("content_filter_results"),
                 finish_reason=message.get("response_metadata", {}).get("finish_reason")
@@ -540,10 +583,10 @@ def init_chat_db(database):
             db.session.commit()
             print("Tool call message added to chat history:", message["id"])
             return {
-                "tool_call_id": message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('id'),
+                "tool_call_id": tool_call_id,
                 "tool_id": tool_id,
                 "tool_name": tool_name,
-                "tool_input": message.get("additional_kwargs", {}).get('tool_calls', [{}])[0].get('function', {}).get("arguments"),
+                "tool_input": tool_input,
                 "total_tokens": message.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
             }
         
@@ -813,7 +856,6 @@ def initialize_tool_definitions():
             },
             "cost_per_call_cents": 1
         }
-
 
     ]
     
