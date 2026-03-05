@@ -1,0 +1,10 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/fewShots/1.0.0/schema.json",
+  "fewShots": [
+    {
+      "id": "8d98a303-2930-4cf3-9902-859b3a244bf7",
+      "question": "[user_id: user_1] how many accounts does this user have?",
+      "query": "SELECT COUNT(*) as total_acc\r\nFROM [dbo].[accounts]\r\nWHERE accounts.user_id = 'user_1';"
+    }
+  ]
+}

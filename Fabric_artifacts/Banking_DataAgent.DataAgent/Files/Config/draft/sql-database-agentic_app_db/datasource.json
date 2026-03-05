@@ -1,0 +1,948 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/dataSource/1.0.0/schema.json",
+  "artifactId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1",
+  "workspaceId": "00000000-0000-0000-0000-000000000000",
+  "dataSourceInstructions": null,
+  "displayName": "agentic_app_db",
+  "type": "sql_database",
+  "userDescription": null,
+  "metadata": null,
+  "elements": [
+    {
+      "id": "ee9093d3-9848-4a40-9d9b-7e08de77e356",
+      "is_selected": false,
+      "display_name": "dbo",
+      "type": "sql_database.schema",
+      "description": null,
+      "children": [
+        {
+          "id": "49b2514c-b46b-4f30-9b80-6e6e11954dd3",
+          "is_selected": true,
+          "display_name": "accounts",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "8715c0f0-39a4-425c-9003-856a35d0ddce",
+              "is_selected": true,
+              "display_name": "account_number",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e32597c1-e1e4-4c6c-8ba4-2047f0d9a38f",
+              "is_selected": true,
+              "display_name": "account_type",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "c0f286c9-53e2-4db2-a811-0dd65464aadb",
+              "is_selected": true,
+              "display_name": "balance",
+              "type": "sql_database.column",
+              "data_type": "decimal",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "1fa5161b-970d-4c89-b3df-696026d6e714",
+              "is_selected": true,
+              "display_name": "created_at",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "0946e4a7-b39e-4147-aab2-b10410782748",
+              "is_selected": true,
+              "display_name": "id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "7e03fffc-ef91-4a8f-8864-7037763545f2",
+              "is_selected": true,
+              "display_name": "name",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "f0d843d7-227c-4c7d-9ea5-128efabf0507",
+              "is_selected": true,
+              "display_name": "user_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "152bbb2e-996e-4c10-a596-bc674d2f143b",
+          "is_selected": false,
+          "display_name": "agent_definitions",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "b296288c-8738-4d71-8843-db6b7662db1c",
+              "is_selected": true,
+              "display_name": "agent_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "a96e389a-eceb-465f-9423-f21fd1309c7e",
+              "is_selected": true,
+              "display_name": "created_at",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "3950e11f-7bb5-4d5b-977c-707141ff6dea",
+              "is_selected": true,
+              "display_name": "description",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "bf297c0e-9d13-4426-8eac-c7acef1c097e",
+              "is_selected": true,
+              "display_name": "llm_config",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "6a2de85b-3293-4fdd-a867-ce797127ef30",
+              "is_selected": true,
+              "display_name": "name",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "cb31cd18-7e65-4d6f-b776-38254d9f7f5e",
+              "is_selected": true,
+              "display_name": "prompt_template",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "608630a8-db52-4de3-8a5c-ddf3bbbe8843",
+          "is_selected": false,
+          "display_name": "agent_traces",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "d4b59abb-551c-4dc7-a178-8c36cda4ca22",
+              "is_selected": true,
+              "display_name": "current_agent",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "95b6621a-cb5f-45d9-9289-d9fb51ce36fd",
+              "is_selected": true,
+              "display_name": "error_message",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "3535b5ff-5283-495a-82e2-99c605c67b6b",
+              "is_selected": true,
+              "display_name": "execution_duration_ms",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "1da1e92a-1146-404d-9f98-d6424b6aeb4f",
+              "is_selected": true,
+              "display_name": "from_agent",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "0525dc70-4ef9-4af0-9e0a-a5bef453746a",
+              "is_selected": true,
+              "display_name": "session_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e7d2cffe-5046-415f-b624-7a95d4b915e8",
+              "is_selected": true,
+              "display_name": "step_order",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "a19e125e-ce0c-4c13-b5dc-59f59b8335a2",
+              "is_selected": true,
+              "display_name": "success",
+              "type": "sql_database.column",
+              "data_type": "bit",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "f52f8787-28bc-45ab-b6b7-4a47ac6a9786",
+              "is_selected": true,
+              "display_name": "trace_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "16a1e1de-c170-429f-951e-f6b0fdd5c846",
+              "is_selected": true,
+              "display_name": "trace_step_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "b5dc4355-4aca-428d-bff8-7b90dc429d8b",
+              "is_selected": true,
+              "display_name": "user_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "50a9006a-46e7-4ce2-8c4a-7bd531c15098",
+          "is_selected": false,
+          "display_name": "chat_history",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "3f534ca2-d1ca-4b6b-95ac-9928e1c7916d",
+              "is_selected": true,
+              "display_name": "agent_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "32b6c954-f186-49b0-8032-4094f4c7d9ee",
+              "is_selected": true,
+              "display_name": "agent_name",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "ef1ccf26-84f7-4ebe-8d86-9035d041a7e1",
+              "is_selected": true,
+              "display_name": "completion_tokens",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "5c9d5a1f-e6c8-48cb-80aa-cdd19423439d",
+              "is_selected": true,
+              "display_name": "content",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "775f8679-ddc4-4d14-a41c-5238b474fbfc",
+              "is_selected": true,
+              "display_name": "content_filter_results",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "77a8641c-78a3-4178-b897-1503e30a4590",
+              "is_selected": true,
+              "display_name": "finish_reason",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "47c0c8d6-3bae-41e7-b7cb-3590243738cc",
+              "is_selected": true,
+              "display_name": "message_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "9155b9e4-b9d8-4c9a-8d63-53492174e3ca",
+              "is_selected": true,
+              "display_name": "message_type",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "848aa8f5-fdd4-46fb-a19c-9f05c0c10d8d",
+              "is_selected": true,
+              "display_name": "model_name",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "09c0e55b-9a27-4a70-8657-3273717d1482",
+              "is_selected": true,
+              "display_name": "prompt_tokens",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "d8ad1c78-1066-4e38-8696-6b65b4546f70",
+              "is_selected": true,
+              "display_name": "response_time_ms",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "dba46707-6e14-405a-a0ba-49fdba9f1a8f",
+              "is_selected": true,
+              "display_name": "routing_step",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "74d2860c-fa68-4488-88d6-1dfa71928a01",
+              "is_selected": true,
+              "display_name": "session_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "7cd57b3c-4080-470a-b2c5-ff706c07cf60",
+              "is_selected": true,
+              "display_name": "tool_call_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "2d67df66-34e4-4605-8801-d7af5a542ba6",
+              "is_selected": true,
+              "display_name": "tool_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "efde474b-be16-42c8-b472-1fb8ca78fdb1",
+              "is_selected": true,
+              "display_name": "tool_input",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e2cc80c1-c7cc-45a0-848b-ff07553f32a7",
+              "is_selected": true,
+              "display_name": "tool_name",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "1741409b-f1db-45bb-854b-43c9de6add22",
+              "is_selected": true,
+              "display_name": "tool_output",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "ae9ecc83-4a21-40b0-8391-0e0abf804af2",
+              "is_selected": true,
+              "display_name": "total_tokens",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "41c5000f-83b2-4cb5-b9b9-3d8cc13eeabc",
+              "is_selected": true,
+              "display_name": "trace_end",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "6086ad27-5069-4b68-a9b9-653ebbc1e9be",
+              "is_selected": true,
+              "display_name": "trace_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "1ad7d629-ca6e-4613-99c5-e05d6dd96b25",
+              "is_selected": true,
+              "display_name": "user_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "1c73eafb-664a-4f9c-ad40-962a1d0cec34",
+          "is_selected": false,
+          "display_name": "chat_sessions",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "6a23d702-bb39-4451-947c-a18476d3023c",
+              "is_selected": true,
+              "display_name": "agent_names_used",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "4454c299-aec3-4bd3-9205-883f63a1cb15",
+              "is_selected": true,
+              "display_name": "created_at",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "091a1475-e77b-417c-b996-a405eab4fd6b",
+              "is_selected": true,
+              "display_name": "session_duration_ms",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e9bdf199-f169-4482-954c-764097c77be2",
+              "is_selected": true,
+              "display_name": "session_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "aadc4b1d-4a6a-432f-84b5-48c77db097ee",
+              "is_selected": true,
+              "display_name": "title",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "0a2788bd-4cbe-4478-af92-f593d2cc701b",
+              "is_selected": true,
+              "display_name": "total_agents_used",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "abaecafc-ab9a-4ce4-9f14-6c1116037203",
+              "is_selected": true,
+              "display_name": "updated_at",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "f888f2df-f390-400f-8009-e35441541009",
+              "is_selected": true,
+              "display_name": "user_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "50f315f2-521d-4484-8611-72851dee57d5",
+          "is_selected": false,
+          "display_name": "DocsChunks_Embeddings",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "72a6e9a1-0f49-43dc-9693-46774ac16d46",
+              "is_selected": true,
+              "display_name": "content",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "4c5a0942-97b1-44e8-8ba3-fa51ffca6df9",
+              "is_selected": true,
+              "display_name": "custom_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "18ed2bf5-8a09-473e-a27a-dcac4780f9c4",
+              "is_selected": true,
+              "display_name": "id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "9138b89d-4d44-4528-ad3e-b5375d86b3e7",
+          "is_selected": false,
+          "display_name": "PDF_RawChunks",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "05fc242b-83de-40e6-852e-1e1794446571",
+              "is_selected": true,
+              "display_name": "chunk_text",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "00d18bed-9ee5-4834-896b-ee71f5d34418",
+              "is_selected": true,
+              "display_name": "created_at",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "3919a826-31e6-4251-8ea5-48d7142b67a1",
+              "is_selected": true,
+              "display_name": "id",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e712ab0a-d3a2-4dc4-ac64-405c68b55ea2",
+              "is_selected": true,
+              "display_name": "source_pdf",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "7ce01881-43da-4b96-9a35-55de705305ed",
+          "is_selected": false,
+          "display_name": "tool_definitions",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "b724d584-b418-4435-9a5c-97c73a4906ef",
+              "is_selected": true,
+              "display_name": "cost_per_call_cents",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "50d31050-31ed-4c17-9e34-0691013a8f66",
+              "is_selected": true,
+              "display_name": "created_at",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "5e398956-e78e-482e-a5e7-49f553fc2e07",
+              "is_selected": true,
+              "display_name": "description",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "f487eeca-f6c3-42b7-9eea-90ce0f662c73",
+              "is_selected": true,
+              "display_name": "input_schema",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "c03afc05-772e-4681-bac6-94ffecf1101e",
+              "is_selected": true,
+              "display_name": "is_active",
+              "type": "sql_database.column",
+              "data_type": "bit",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "53f3dee9-c3ec-4c50-95d2-7cf9c3f539bc",
+              "is_selected": true,
+              "display_name": "name",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "6bb8f38b-5454-4012-b2b5-a88f8c1560c9",
+              "is_selected": true,
+              "display_name": "tool_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "cb203698-431a-4c1d-9156-4ada5559b9a1",
+              "is_selected": true,
+              "display_name": "updated_at",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "b4862b0b-a733-43f8-aa76-fd2645427091",
+              "is_selected": true,
+              "display_name": "version",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "0296a8c6-d278-4ef6-9477-914ea0865e78",
+          "is_selected": false,
+          "display_name": "tool_usage",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "a23b831c-b2d8-4033-aba0-5716b113dc27",
+              "is_selected": true,
+              "display_name": "executing_agent",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "03254a37-8649-4c64-ab14-31dd376e4523",
+              "is_selected": true,
+              "display_name": "session_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "2256e965-ef84-429a-96ee-2a2efe2476af",
+              "is_selected": true,
+              "display_name": "status",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e604e3f0-6a8e-45ee-906d-7c2cb9444680",
+              "is_selected": true,
+              "display_name": "tokens_used",
+              "type": "sql_database.column",
+              "data_type": "int",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "044bc754-a260-4078-b184-61fcebb5270c",
+              "is_selected": true,
+              "display_name": "tool_call_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "ad4a1c8b-aa95-46fb-8bf5-92f806f0e254",
+              "is_selected": true,
+              "display_name": "tool_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "c986d01c-6ce1-4ffe-bf5a-b582995b872f",
+              "is_selected": true,
+              "display_name": "tool_input",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "48d9f116-b7ae-415c-82dd-4d67ac41ca59",
+              "is_selected": true,
+              "display_name": "tool_message",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e3df028b-1d2b-41d1-ab20-fe43485aa788",
+              "is_selected": true,
+              "display_name": "tool_name",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "7b15af01-35e0-40ce-a301-ef241dcc6801",
+              "is_selected": true,
+              "display_name": "tool_output",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "180e68d8-aef1-43c8-8205-57f7079a3c6a",
+              "is_selected": true,
+              "display_name": "trace_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "3925ed45-fee1-43d9-9640-964735f2c52c",
+          "is_selected": true,
+          "display_name": "transactions",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "9aae1fbf-0383-4b68-ae42-e307aecd5784",
+              "is_selected": true,
+              "display_name": "amount",
+              "type": "sql_database.column",
+              "data_type": "decimal",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "a67dd1d0-9dfd-455c-8758-9760b4bdaec4",
+              "is_selected": true,
+              "display_name": "category",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "f853ba92-ebec-495b-aaea-401ee27a1f47",
+              "is_selected": true,
+              "display_name": "created_at",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "1e9c8eea-77a6-4bf2-b5bb-55a16dac59a0",
+              "is_selected": true,
+              "display_name": "from_account_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "d62f8bee-590d-432b-bcef-e10c6a55b845",
+              "is_selected": true,
+              "display_name": "id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e3a0afd1-9bed-4597-ae17-e8645be66692",
+              "is_selected": true,
+              "display_name": "status",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e83c6f1d-6127-4c6c-a153-a2861a0f5ca2",
+              "is_selected": true,
+              "display_name": "to_account_id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "e437bba1-945d-4f18-9202-3c3c566df8a5",
+              "is_selected": true,
+              "display_name": "type",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "ffc63bc4-5d18-472e-ae58-37df52d6e34e",
+          "is_selected": true,
+          "display_name": "users",
+          "type": "sql_database.table",
+          "description": null,
+          "children": [
+            {
+              "id": "bad7668d-34cf-439d-8e69-669b69fefcad",
+              "is_selected": true,
+              "display_name": "created_at",
+              "type": "sql_database.column",
+              "data_type": "datetime2",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "49fbf275-2050-4240-83d1-9644a24336eb",
+              "is_selected": true,
+              "display_name": "email",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "84c8719a-6101-40dc-92e7-324823041c66",
+              "is_selected": true,
+              "display_name": "id",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            },
+            {
+              "id": "61a5ae92-6cdc-42fb-83ed-a2e41b046c50",
+              "is_selected": true,
+              "display_name": "name",
+              "type": "sql_database.column",
+              "data_type": "varchar",
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
