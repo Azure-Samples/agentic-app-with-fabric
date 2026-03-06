@@ -132,13 +132,16 @@ def log_multi_agent_trace():
             user_id=data.get('user_id')
         )
         
-        # Log the multi-agent trace
+        # Log the multi-agent trace (success_list/error_list carry per-step error info,
+        # e.g. when fabric_agent fails and hands off to account_agent)
         result = chat_manager.add_multi_agent_trace(
-            trace_id =data.get('trace_id'),
+            trace_id=data.get('trace_id'),
             serialized_messages=data.get('messages'),
             trace_duration=data.get('trace_duration', 0),
             event_times=data.get('event_times', []),
-            nodes_list=data.get('nodes_list', [])
+            nodes_list=data.get('nodes_list', []),
+            success_list=data.get('success_list', []),
+            error_list=data.get('error_list', []),
         )
 
         return jsonify({

@@ -203,7 +203,7 @@ def create_coordinator_agent():
                     - For READ-ONLY data questions about accounts/transactions/balances/spending/history → respond: "fabric_agent"
                     - For WRITE operations like creating accounts, transferring money → respond: "account_agent"
                     - For policy questions/general questions/support → respond: "support_agent"
-                    - For requests related to Visualization/chart/widget/simulation → respond: "visualization_agent"
+                    - For requests related to Editing or creating Visualization/chart/widget/simulation → respond: "visualization_agent"
 
                     ## Examples ##
                     - "What are my recent transactions?" → "fabric_agent"
@@ -213,6 +213,7 @@ def create_coordinator_agent():
                     - "Create a new checking account" → "account_agent"
                     - "What is your refund policy?" → "support_agent"
                     - "Create a spending chart" → "visualization_agent"
+                    - "Edit title of my existing widget" → "visualization_agent"
 
                     ## Output Format ##
                     Respond with ONLY: "fabric_agent" or "account_agent" or "support_agent" or "visualization_agent"
