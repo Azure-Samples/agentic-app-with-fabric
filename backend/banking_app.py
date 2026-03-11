@@ -99,18 +99,35 @@ db = SQLAlchemy(app)
 init_chat_db(db)
 AIWidget = init_ai_widget_db(db)
 
+###################### Vector Store Initialization (for support document search) ######################
+
 connection_string = os.getenv('FABRIC_SQL_CONNECTION_URL_AGENTIC')
+# Remove Authentication parameter if present for SQLAlchemy compatibility
+if "Authentication=ActiveDirectory" in connection_string:
+    parts = connection_string.split(";")
+    connection_string = ";".join([p for p in parts if not p.startswith("Authentication=")])
 connection_url = f"mssql+pyodbc:///?odbc_connect={connection_string}"
 
+# Vector store will be initialized lazily when needed
 vector_store = None
-if embeddings_client:
-    vector_store = SQLServer_VectorStore(
-        connection_string=connection_url,
-        table_name="DocsChunks_Embeddings",
-        embedding_function=embeddings_client,
-        embedding_length=1536,
-        distance_strategy=DistanceStrategy.COSINE,
-    )
+_vector_store_initialized = False
+
+def get_vector_store():
+    """Lazy initialization of vector store."""
+    global vector_store, _vector_store_initialized
+    if not _vector_store_initialized and embeddings_client:
+        vector_store = SQLServer_VectorStore(
+            connection_string=connection_url,
+            table_name="DocsChunks_Embeddings",
+            embedding_function=embeddings_client,
+            embedding_length=1536,
+            distance_strategy=DistanceStrategy.COSINE,
+        )
+        _vector_store_initialized = True
+    return vector_store
+vector_store = get_vector_store()
+
+##############################################################################################################
 
 # In-memory store for LangGraph
 store = InMemoryStore()
