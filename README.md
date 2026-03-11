@@ -205,7 +205,7 @@ Edit the variables: Open the new .env file and fill in the values for the follow
 
 **Microsoft Fabric SQL Database**
 
-**FABRIC_SQL_CONNECTION_URL_AGENTIC**: This is the connection string for the SQL Database that contains both **the agentic application's operational data** (e.g., chat history) and **the sample customer banking data**. You can find this in your Fabric workspace by navigating to the SQL-endpoint of this database, clicking the "settings" -> "Connection strings" -> go to "ODBC" tab and select and copy SQL connection string.
+**FABRIC_SQL_CONNECTION_URL_AGENTIC**: This is the connection string for the SQL Database that contains both **the agentic application's operational data** (e.g., chat history) and **the sample customer banking data**. You can find this in your Fabric workspace by navigating to the SQL-endpoint of this database, clicking the "settings" -> "Connection strings" -> go to "ODBC" tab and select and copy SQL connection string. **IMPORTANT: REMOVE ActiveDirectoryInteractive and REPLACE withL: ActiveDirectoryCli**
 
 ---
 
@@ -215,9 +215,6 @@ Edit the variables: Open the new .env file and fill in the values for the follow
 
 This Cosmos DB database has two containers: 1- **gen_ui_config** which is used for storing and retrieving configs of generated UI components (charts, simulations, etc.) for each user; and 2- **longterm_memory** container which is used for storing and retrieving conversation history per session for each user.
 
- -->**IMPORTANT**: For authentication and connecting to the Fabric Cosmos DB database, you must first do **az login** in terminal.<--
-
----
 
 **Microsoft Fabric Eventhub Connection**
 
@@ -254,12 +251,14 @@ In the root project directory run below commands:
 ```bash
 python3 -m venv venv # this creates the environment
 
-# !!! ON WINDOWS -- this Activates the environment
-
+# !!! -----> ON WINDOWS -- run below to activate the environment
 .\venv\Scripts\activate 
-# !!!c ON MAC:
+
+# !!! -----> ON MAC -- run below to activate the environment:
 source venv/bin/activate
 
+
+# to install requirements, run:
 pip install -r requirements.txt
 ```
 
@@ -278,6 +277,14 @@ npm install
 ### 4. Run the Application
 
 Open **two** terminal windows.
+
+---
+ **FRIST THINGS FIRST! ---> DO NOT FORGET TO DO BELOW !!!** 
+
+--> For authentication and connecting to the Fabric SQL and  Cosmos DB database, you must first do **az login** in terminal.<--
+
+---
+
 
 #### Terminal 1: Start Backend
 
