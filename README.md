@@ -20,7 +20,7 @@
     - [3. Automatic set up of all required Fabric resources and artifacts](#3-automatic-set-up-of-all-required-fabric-resources-and-artifacts)
       - [Step 1: Set up your database in Fabric](#step-1-set-up-your-database-in-fabric)
       - [Step 2: Re-deploy to connect semantic model to the right database endpoint](#step-2-re-deploy-to-connect-semantic-model-to-the-right-database-endpoint)
-    - [4. Add extra views to Lakehouse's SQL analytics endpoint](#4-add-extra-views-to-lakehouses-sql-analytics-endpoint)
+    - [4. \*\*\* IMPORTANT!!: Add extra views to Lakehouse's SQL analytics endpoint \*\*\*](#4--important-add-extra-views-to-lakehouses-sql-analytics-endpoint-)
 - [Follow below steps to run the app locally!](#follow-below-steps-to-run-the-app-locally)
   - [1. Configure Environment Variables](#1-configure-environment-variables)
   - [2. Install Backend Requirements (Flask API)](#2-install-backend-requirements-flask-api)
@@ -161,7 +161,7 @@ You only need to do below steps one time.
 ##### Step 2: Re-deploy to connect semantic model to the right database endpoint
 
 - In the first step, data artifacts were deployed, but the semantic model needs to be redeloyed by provding the correct database endpoint parameters which you would need to obtain and provide manually as below:
-1. Obtain below values from Fabric (copy and keep somewhere)
+1. **Go to agentic_lake's SQL analyitc endpoint**, and Obtain below values (copy and keep somewhere)
 ![conn_str_lake](assets/lake_strings.png)
     - **SQL server connection string**: First, go to the **SQL analytics endpoint** of the **agentic_lake**, go to settings -> SQL endpoint -> copy value under SQL connection string  (paste it somewhere to keep it for now)
     - **Lakehouse analytics GUID**: Look at the address bar, you should see something like this: *https://app.fabric.microsoft.com/groups/[first string]/mirroredwarehouses (or lakehouses)/**[second string]**?experience=fabric-developer*
@@ -177,7 +177,7 @@ You only need to do below steps one time.
 
     ![db_lineage](assets/db_lineage.png)
 
-#### 4. Add extra views to Lakehouse's SQL analytics endpoint
+#### 4. *** IMPORTANT!!: Add extra views to Lakehouse's SQL analytics endpoint ***
 
 The initial application data will be automatically populated, if not existing, in the SQL Database when you start the backend application. So you do not need to do any extra steps to ingest data. But for the Power BI reporting layer, we need to add some extra views.
 
@@ -253,7 +253,13 @@ In the root project directory run below commands:
 
 ```bash
 python3 -m venv venv # this creates the environment
-.\venv\Scripts\activate # (on Windows)  -- this Activates the environment
+
+# !!! ON WINDOWS -- this Activates the environment
+
+.\venv\Scripts\activate 
+# !!!c ON MAC:
+source venv/bin/activate
+
 pip install -r requirements.txt
 ```
 
