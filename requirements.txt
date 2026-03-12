@@ -1,5 +1,4 @@
 azure-core
-azure-identity
 Faker
 Flask
 flask-cors
