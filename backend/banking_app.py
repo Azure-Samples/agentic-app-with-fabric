@@ -825,11 +825,19 @@ def chatbot():
         trace_id = str(uuid.uuid4())
         print("[New Trace] Starting new trace with ID:", trace_id)
 
+        ##################### Initialize Event Hub Producer Client for analytics streaming #####################
         from azure.eventhub import EventHubProducerClient, EventData
         eventHubConnString = os.getenv("FABRIC_EVENT_HUB_CONNECTION_STRING")
         eventHubName = os.getenv("FABRIC_EVENT_HUB_NAME")
+        stream_flag = False
+        try:
+            producer_events = EventHubProducerClient.from_connection_string(conn_str=eventHubConnString, eventhub_name=eventHubName)
+            stream_flag = True
+        except Exception as e:
+            print(f"[chatbot] Warning: Failed to create EventHubProducerClient: {e}")
 
-        producer_events = EventHubProducerClient.from_connection_string(conn_str=eventHubConnString, eventhub_name=eventHubName)
+
+        #########################################################################################################
         from agent_analytics import stream_load
         flag = False
         try:
@@ -843,7 +851,7 @@ def chatbot():
                                                         trace_id = trace_id,
                                                         trace_duration=trace_duration)
             
-            # step1-  test simulate extremely sensitive content. First uncomment below to cause exception -->
+            # simulate extremely sensitive content by using one of below trigger words in the user message
             sensitive_list = ["violence", "self_harm", "hate",
                               "sexual", "jailbreak"]
             
@@ -868,9 +876,10 @@ def chatbot():
             # Send analytics in background thread - DON'T WAIT
             def log_analytics_async():
                 try:
-                    stream_load(producer_events=producer_events, 
-                            result_dict=analytics_data,
-                            user_msg=user_message)
+                    if stream_flag:
+                        stream_load(producer_events=producer_events, 
+                                result_dict=analytics_data,
+                                user_msg=user_message)
                     call_analytics_service("chat/log-multi-agent-trace", 
                                         data=analytics_data)
                 except Exception as e:
@@ -918,9 +927,10 @@ def chatbot():
 
             def log_analytics_async():
                 try:
-                    stream_load(producer_events=producer_events, 
-                            result_dict=result_dict,
-                            user_msg=user_message, failed_response=True)
+                    if stream_flag:
+                        stream_load(producer_events=producer_events, 
+                                result_dict=result_dict,
+                                user_msg=user_message, failed_response=True)
                     call_analytics_service("chat/log-content-safety-violation", 
                                         data=result_dict)
                 except Exception as e:
