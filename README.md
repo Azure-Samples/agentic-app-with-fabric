@@ -1,9 +1,8 @@
-<!-- omit from toc -->
+
 # 🏦  Agentic Banking App with Microsoft Fabric
-<!-- omit from toc -->
+
 #### NOTE: The main branch was last updated on: 🟢2026-03-05 -- Critical fix in chat_data_model.py due to langchain updates!🟢
-<!-- Auto-updated by Markdown All in One -->
-<!-- omit from toc -->
+
 ## 📑 Table of Contents
 - [Intro](#intro)
 - [Architecture \& Tech Stack](#architecture--tech-stack)
@@ -12,8 +11,11 @@
     - [Agents](#agents)
   - [Analytics Service for Agentic Operational Data](#analytics-service-for-agentic-operational-data)
     - [App insights and analytics in Fabric](#app-insights-and-analytics-in-fabric)
-- [Setting up the Agentic Application on Microsoft Fabric](#setting-up-the-agentic-application-on-microsoft-fabric)
-  - [🔧 Prerequisites](#-prerequisites)
+  ---
+**Follow Below Steps to deploy and run the app!**
+- **Step 0:**[🔧 Prerequisites](#-prerequisites)
+- **Step 1**: [Deploy Required Microsoft Fabric Workloads](#setting-up-the-agentic-application-on-microsoft-fabric)
+
   - [Set up required resources (One time)](#set-up-required-resources-one-time)
     - [1. Set up your repo](#1-set-up-your-repo)
     - [2. Set up your Fabric account](#2-set-up-your-fabric-account)
@@ -21,21 +23,13 @@
       - [Step 1: Set up your database in Fabric](#step-1-set-up-your-database-in-fabric)
       - [Step 2: Re-deploy to connect semantic model to the right database endpoint](#step-2-re-deploy-to-connect-semantic-model-to-the-right-database-endpoint)
     - [4. \*\*\* IMPORTANT!!: Add extra views to Lakehouse's SQL analytics endpoint \*\*\*](#4--important-add-extra-views-to-lakehouses-sql-analytics-endpoint-)
-- [Follow below steps to run the app locally!](#follow-below-steps-to-run-the-app-locally)
+- **Step 2:** [Run the app locally!](#follow-below-steps-to-run-the-app-locally)
   - [1. Configure Environment Variables](#1-configure-environment-variables)
   - [2. Install Backend Requirements (Flask API)](#2-install-backend-requirements-flask-api)
   - [3. Configure the Frontend (React + Vite)](#3-configure-the-frontend-react--vite)
   - [4. Run the Application](#4-run-the-application)
     - [Terminal 1: Start Backend](#terminal-1-start-backend)
     - [Terminal 2: Start Frontend](#terminal-2-start-frontend)
-- [Testing Real-time Monitoring](#testing-real-time-monitoring)
-  - [Follow below steps to finalize real-time intelligence pipeline in Fabric](#follow-below-steps-to-finalize-real-time-intelligence-pipeline-in-fabric)
-    - [Connect your Eventhouse database to the Eventstream](#connect-your-eventhouse-database-to-the-eventstream)
-    - [Add content safety views to the Real-Time Dashboard](#add-content-safety-views-to-the-real-time-dashboard)
-- [Explore Agentic Analytics](#explore-agentic-analytics)
-- [Evaluate agent performance via Azure Evaluation Framework (Optional)](#evaluate-agent-performance-via-azure-evaluation-framework-optional)
-- [Explore how to create and Ingest Embeddings from PDF (optional)](#explore-how-to-create-and-ingest-embeddings-from-pdf-optional)
-- [Contributing](#contributing)
 ---
 **Explore Fabric Workloads for Monitoring, Business Intelligence and Agent Optimization**
 - **RTI:** [Testing Real-time Monitoring](#testing-real-time-monitoring)
@@ -54,7 +48,10 @@
 - [Give Feedback & Contribute!!](#contributing)
 
 
-## Intro
+---
+---
+
+## 💡Intro 
 
 **Agentic Banking App** is an interactive web application designed to simulate a modern banking dashboard. Its primary purpose is to serve as an educational tool, demonstrating:
 - How SQL-based databases are leveraged across different types of workloads: **OLTP**, **OLAP**, **AI** workloads.
@@ -63,7 +60,7 @@
 
 Through a hands-on interface, users can see the practical difference between writing a new transaction to the database, running complex analytical queries on historical data, and using natural language to ask an agent to query the database for them.
 
-## Architecture & Tech Stack
+## Architecture & Tech Stack 
 
 ![arch](assets/arch_v1.png)
 
@@ -79,8 +76,9 @@ Through a hands-on interface, users can see the practical difference between wri
 
 ---
 
-<!-- omit from toc -->
-**Test the live app here:** https://aka.ms/HostedAgenticAppFabric
+🚀🚀🚀
+**Test the live app here** 🚀🚀🚀
+https://aka.ms/HostedAgenticAppFabric 
 ---
 
 ## ✨ Features
@@ -115,25 +113,26 @@ Through a hands-on interface, users can see the practical difference between wri
 - As the app is used, the agentic operational data is captured, modeled, and used to reflect valuable analytics and insights via Fabric features such as Power BI reports, data agent, notebooks, real-time dashboards, etc.
 ---
 
-
-
-## Setting up the Agentic Application on Microsoft Fabric
-
-Demo:
-
-[![Watch the Demo: SQL Agentic App on Fabric](./assets/Link_Video.png)](https://www.youtube.com/watch?v=F4IMijKm990)
-
-
-
-### 🔧 Prerequisites
+## 🔧 Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or later)
 - [Python](https://www.python.org/) (3.11.9 or higher)
 - A Fabric workspace 
 - An [Azure OpenAI API Key](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 - ODBC Driver for SQL Server 18
-- Recommend VSCode as tested in VS Code only
-- This demo runs currently only on a **Windows Machine** as it support ActiveDirectoryInteractive
+- The app uses **Azure CLI token-based authentication**, so you must have Azure CLI installed:
+  -- [How to install on Windows](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest)
+  -- [How to install on macOS](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos?view=azure-cli-latest)
+- We recommend VSCode as tested in VS Code only
+
+
+## Deploy Required Microsoft Fabric Workloads
+
+Demo:
+
+[![Watch the Demo: SQL Agentic App on Fabric](./assets/Link_Video.png)](https://www.youtube.com/watch?v=F4IMijKm990)
+
+
 
 ---
 
@@ -221,8 +220,17 @@ Edit the variables: Open the new .env file and fill in the values for the follow
 
 **Microsoft Fabric SQL Database**
 
-**FABRIC_SQL_CONNECTION_URL_AGENTIC**: This is the connection string for the SQL Database that contains both **the agentic application's operational data** (e.g., chat history) and **the sample customer banking data**. You can find this in your Fabric workspace by navigating to the SQL-endpoint of this database, clicking the "settings" -> "Connection strings" -> go to "ODBC" tab and select and copy SQL connection string. **IMPORTANT: REMOVE ActiveDirectoryInteractive and REPLACE withL: ActiveDirectoryCli**
+**FABRIC_SQL_CONNECTION_URL_AGENTIC**: This is the connection string for the SQL Database that contains both **the agentic application's operational data** (e.g., chat history) and **the sample customer banking data**. You can find this in your Fabric workspace by navigating to the SQL-endpoint of this database, clicking the "settings" -> "Connection strings" -> go to "ODBC" tab and select and copy SQL connection string. 
 
+**IMPORTANT: REMOVE ActiveDirectoryInteractive and REPLACE with: ActiveDirectoryCli**
+
+```dotenv
+# Before (the copied value)
+FABRIC_SQL_CONNECTION_URL_AGENTIC = "Driver={ODBC Driver 18 for SQL Server};Server=...;Authentication=ActiveDirectoryInteractive"
+
+# After making the change
+FABRIC_SQL_CONNECTION_URL_AGENTIC = "Driver={ODBC Driver 18 for SQL Server};Server=...;Authentication=ActiveDirectoryCli"
+```
 ---
 
 **Microsoft Fabric Cosmos DB**
@@ -287,19 +295,22 @@ From the root project directory:
 ```bash
 npm install
 ```
+---
+### 4. Login to Azure 
+ **FRIST THINGS FIRST! ---> DO NOT FORGET TO DO BELOW !!!** 
+
+For authentication and connecting to the Fabric SQL and Cosmos DB database, you must run below in a Terminal window:
+```bash
+az login
+```
+Use your Fabric account credentials to log in.
 
 ---
 
-### 4. Run the Application
+### 5. Run the Application
 
 Open **two** terminal windows.
 
----
- **FRIST THINGS FIRST! ---> DO NOT FORGET TO DO BELOW !!!** 
-
---> For authentication and connecting to the Fabric SQL and  Cosmos DB database, you must first do **az login** in terminal.<--
-
----
 
 
 #### Terminal 1: Start Backend
