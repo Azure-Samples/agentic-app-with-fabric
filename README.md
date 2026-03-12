@@ -33,9 +33,25 @@
     - [Connect your Eventhouse database to the Eventstream](#connect-your-eventhouse-database-to-the-eventstream)
     - [Add content safety views to the Real-Time Dashboard](#add-content-safety-views-to-the-real-time-dashboard)
 - [Explore Agentic Analytics](#explore-agentic-analytics)
-- [Explore how to create and Ingest Embeddings from PDF (optional)](#explore-how-to-create-and-ingest-embeddings-from-pdf-optional)
 - [Evaluate agent performance via Azure Evaluation Framework (Optional)](#evaluate-agent-performance-via-azure-evaluation-framework-optional)
+- [Explore how to create and Ingest Embeddings from PDF (optional)](#explore-how-to-create-and-ingest-embeddings-from-pdf-optional)
 - [Contributing](#contributing)
+---
+**Explore Fabric Workloads for Monitoring, Business Intelligence and Agent Optimization**
+- **RTI:** [Testing Real-time Monitoring](#testing-real-time-monitoring)
+  - [Follow below steps to finalize real-time intelligence pipeline in Fabric](#follow-below-steps-to-finalize-real-time-intelligence-pipeline-in-fabric)
+    - [Connect your Eventhouse database to the Eventstream](#connect-your-eventhouse-database-to-the-eventstream)
+    - [Add content safety views to the Real-Time Dashboard](#add-content-safety-views-to-the-real-time-dashboard)
+- **Power BI:** [Explore Agentic Analytics](#explore-agentic-analytics)
+
+- **Fabric Notebooks**: [Evaluate agent performance via Azure Evaluation Framework (Optional)](#evaluate-agent-performance-via-azure-evaluation-framework-optional)
+  
+---
+
+**Learn More & Contribute!**
+- [Explore how to create and Ingest Embeddings from PDF (optional)](#explore-how-to-create-and-ingest-embeddings-from-pdf-optional)
+- [Workshop Content](workshop)
+- [Give Feedback & Contribute!!](#contributing)
 
 
 ## Intro
@@ -128,8 +144,8 @@ Demo:
 - Open a terminal window on your machine and run below:
 
 ```bash
-git clone https://github.com/Azure-Samples/sql-agentic-app-with-fabric.git
-cd sql-agentic-app-with-fabric  # root folder of the repo
+git clone https://github.com/Azure-Samples/agentic-app-with-fabric.git
+cd agentic-app-with-fabric  # root folder of the repo
 ```
 - Create a **private** repo in your Github account, with the same name. Since you will be adding sensitive credentials, **repo must be private**.
 - Go back to terminal (you should be in the root folder of the repo you cloned) and push the content to your private repo by running below:
@@ -382,17 +398,6 @@ As you use the app:
 - The data model captured via banking_semantic_model is refreshed
 - Agentic_Insights report gets updated based on most recent data
 
-
-
-## Explore how to create and Ingest Embeddings from PDF (optional)
-We automatically ingested embeddings to ensure a quick onboarding. If you are interested to see how to do it, we have provided a python script:
-
-1. Copy the .env file in the folder **Data_Ingest**.
-2. Open the Python script in the path: Data_Ingest/Ingest_pdf.py
-3. Run the script from the folder Data_Ingest (note that doing so might duplicate the same embeddings):
-```bash
-python Ingest_pdf.py
-```
 ---
 ## Evaluate agent performance via Azure Evaluation Framework (Optional)
 
@@ -409,7 +414,22 @@ You can set up this notebook in your Fabric workspace and run by following below
     ```
 3. Now you can run the cells in the notebook in order. After all is run successfully there should be a new table created in the "agentic_lake" called **answerqualityscores_withcontext** which has all the scores.
 
+
+
+## Explore how to create and Ingest Embeddings from PDF (optional)
+We automatically ingested embeddings to ensure a quick onboarding. If you are interested to see how to do it, we have provided a python script:
+
+1. Copy the .env file in the folder **Data_Ingest**.
+2. Open the Python script in the path: Data_Ingest/Ingest_pdf.py
+3. Run the script from the folder Data_Ingest (note that doing so might duplicate the same embeddings):
+```bash
+python Ingest_pdf.py
+```
+
 ##  Contributing
 
 Contributions are welcome!
+
+Give the repo a ⭐ if you like it!
+
 If you have suggestions for improvements or find any bugs, feel free to [open an issue](https://aka.ms/AgenticAppFabric) or submit a pull request.
