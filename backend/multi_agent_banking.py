@@ -4,6 +4,10 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 import time
 import json
+import os
+
+def _fabric_enabled() -> bool:
+    return os.environ.get("USE_FABRIC_DATA_AGENT", "false").lower() == "true"
 
 # Import existing banking infrastructure
 from agents import (
@@ -59,9 +63,15 @@ def coordinator_node(state: BankingAgentState):
         state["task_type"] = "account_management"
         print(f"[COORDINATOR] Routing to: account_agent")
     elif message_lower == "fabric_agent":
-        state["pass_to"] = "fabric_agent"
-        state["task_type"] = "fabric_data_query"
-        print(f"[COORDINATOR] Routing to: fabric_agent")
+        if _fabric_enabled():
+            state["pass_to"] = "fabric_agent"
+            state["task_type"] = "fabric_data_query"
+            print(f"[COORDINATOR] Routing to: fabric_agent")
+        else:
+            # Fall back to account_agent when fabric is disabled
+            state["pass_to"] = "account_agent"
+            state["task_type"] = "account_management"
+            print(f"[COORDINATOR] Fabric disabled, routing to: account_agent")
     else:
         state["pass_to"] = "support_agent"
         state["task_type"] = "customer_support"
