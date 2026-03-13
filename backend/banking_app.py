@@ -99,18 +99,35 @@ db = SQLAlchemy(app)
 init_chat_db(db)
 AIWidget = init_ai_widget_db(db)
 
+###################### Vector Store Initialization (for support document search) ######################
+
 connection_string = os.getenv('FABRIC_SQL_CONNECTION_URL_AGENTIC')
+# Remove Authentication parameter if present for SQLAlchemy compatibility
+if "Authentication=ActiveDirectory" in connection_string:
+    parts = connection_string.split(";")
+    connection_string = ";".join([p for p in parts if not p.startswith("Authentication=")])
 connection_url = f"mssql+pyodbc:///?odbc_connect={connection_string}"
 
+# Vector store will be initialized lazily when needed
 vector_store = None
-if embeddings_client:
-    vector_store = SQLServer_VectorStore(
-        connection_string=connection_url,
-        table_name="DocsChunks_Embeddings",
-        embedding_function=embeddings_client,
-        embedding_length=1536,
-        distance_strategy=DistanceStrategy.COSINE,
-    )
+_vector_store_initialized = False
+
+def get_vector_store():
+    """Lazy initialization of vector store."""
+    global vector_store, _vector_store_initialized
+    if not _vector_store_initialized and embeddings_client:
+        vector_store = SQLServer_VectorStore(
+            connection_string=connection_url,
+            table_name="DocsChunks_Embeddings",
+            embedding_function=embeddings_client,
+            embedding_length=1536,
+            distance_strategy=DistanceStrategy.COSINE,
+        )
+        _vector_store_initialized = True
+    return vector_store
+vector_store = get_vector_store()
+
+##############################################################################################################
 
 # In-memory store for LangGraph
 store = InMemoryStore()
@@ -810,11 +827,19 @@ def chatbot():
         trace_id = str(uuid.uuid4())
         print("[New Trace] Starting new trace with ID:", trace_id)
 
+        ##################### Initialize Event Hub Producer Client for analytics streaming #####################
         from azure.eventhub import EventHubProducerClient, EventData
         eventHubConnString = os.getenv("FABRIC_EVENT_HUB_CONNECTION_STRING")
         eventHubName = os.getenv("FABRIC_EVENT_HUB_NAME")
+        stream_flag = False
+        try:
+            producer_events = EventHubProducerClient.from_connection_string(conn_str=eventHubConnString, eventhub_name=eventHubName)
+            stream_flag = True
+        except Exception as e:
+            print(f"[chatbot] Warning: Failed to create EventHubProducerClient: {e}")
 
-        producer_events = EventHubProducerClient.from_connection_string(conn_str=eventHubConnString, eventhub_name=eventHubName)
+
+        #########################################################################################################
         from agent_analytics import stream_load
         flag = False
         try:
@@ -828,7 +853,7 @@ def chatbot():
                                                         trace_id = trace_id,
                                                         trace_duration=trace_duration)
             
-            # step1-  test simulate extremely sensitive content. First uncomment below to cause exception -->
+            # simulate extremely sensitive content by using one of below trigger words in the user message
             sensitive_list = ["violence", "self_harm", "hate",
                               "sexual", "jailbreak"]
             
@@ -853,9 +878,10 @@ def chatbot():
             # Send analytics in background thread - DON'T WAIT
             def log_analytics_async():
                 try:
-                    stream_load(producer_events=producer_events, 
-                            result_dict=analytics_data,
-                            user_msg=user_message)
+                    if stream_flag:
+                        stream_load(producer_events=producer_events, 
+                                result_dict=analytics_data,
+                                user_msg=user_message)
                     call_analytics_service("chat/log-multi-agent-trace", 
                                         data=analytics_data)
                 except Exception as e:
@@ -903,9 +929,10 @@ def chatbot():
 
             def log_analytics_async():
                 try:
-                    stream_load(producer_events=producer_events, 
-                            result_dict=result_dict,
-                            user_msg=user_message, failed_response=True)
+                    if stream_flag:
+                        stream_load(producer_events=producer_events, 
+                                result_dict=result_dict,
+                                user_msg=user_message, failed_response=True)
                     call_analytics_service("chat/log-content-safety-violation", 
                                         data=result_dict)
                 except Exception as e:

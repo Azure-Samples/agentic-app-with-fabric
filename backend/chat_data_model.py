@@ -72,7 +72,6 @@ def handle_content_safety_error(error, trace_id:str, session_id: str, user_id: s
         if "The response was filtered" in error_message:
             # Determine which filter was triggered
             for i in range(len(filter_trigger_list)):
-                print(filter_trigger_list[i])
                 if filter_trigger_list[i] in error_message:
                     filter_category = filter_trigger_list[i].split(":")[0].replace("'", "")
                     print("FILTER CATEGORY DETECTED:", filter_category)
@@ -86,9 +85,6 @@ def handle_content_safety_error(error, trace_id:str, session_id: str, user_id: s
                             "filtered": True,
                             "severity": "high"
                         }
-        # print("CONTENT FILTER RESULT MOCK:", content_filter_result_mock)
-
-
 
     except Exception as parse_error:
         print(f"[Content Safety Handler] Error parsing content filter details: {parse_error}")
