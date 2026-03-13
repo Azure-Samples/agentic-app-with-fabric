@@ -36,7 +36,7 @@ def fabricsql_connection_agentic_db():
                 ) from e
             else:
                 raise
-    if "Authentication=ActiveDirectory" in conn_str:
+    if "Authentication=ActiveDirectoryCli" in conn_str:
         try:
             # Get access token (cached)
             token = _get_access_token()
