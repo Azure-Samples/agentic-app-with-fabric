@@ -11,25 +11,12 @@
     - [Agents](#agents)
   - [Analytics Service for Agentic Operational Data](#analytics-service-for-agentic-operational-data)
     - [App insights and analytics in Fabric](#app-insights-and-analytics-in-fabric)
-  ---
+---
 **Follow Below Steps to deploy and run the app!**
 - **Step 0:**[🔧 Prerequisites](#-prerequisites)
-- **Step 1**: [Deploy Required Microsoft Fabric Workloads](#setting-up-the-agentic-application-on-microsoft-fabric)
-
-  - [Set up required resources (One time)](#set-up-required-resources-one-time)
-    - [1. Set up your repo](#1-set-up-your-repo)
-    - [2. Set up your Fabric account](#2-set-up-your-fabric-account)
-    - [3. Automatic set up of all required Fabric resources and artifacts](#3-automatic-set-up-of-all-required-fabric-resources-and-artifacts)
-      - [Step 1: Set up your database in Fabric](#step-1-set-up-your-database-in-fabric)
-      - [Step 2: Re-deploy to connect semantic model to the right database endpoint](#step-2-re-deploy-to-connect-semantic-model-to-the-right-database-endpoint)
-    - [4. \*\*\* IMPORTANT!!: Add extra views to Lakehouse's SQL analytics endpoint \*\*\*](#4--important-add-extra-views-to-lakehouses-sql-analytics-endpoint-)
+- **Step 1**: [Deploy Required Microsoft Fabric Workloads](#deploy-required-microsoft-fabric-workloads) 
 - **Step 2:** [Run the app locally!](#follow-below-steps-to-run-the-app-locally)
-  - [1. Configure Environment Variables](#1-configure-environment-variables)
-  - [2. Install Backend Requirements (Flask API)](#2-install-backend-requirements-flask-api)
-  - [3. Configure the Frontend (React + Vite)](#3-configure-the-frontend-react--vite)
-  - [4. Run the Application](#4-run-the-application)
-    - [Terminal 1: Start Backend](#terminal-1-start-backend)
-    - [Terminal 2: Start Frontend](#terminal-2-start-frontend)
+
 ---
 **Explore Fabric Workloads for Monitoring, Business Intelligence and Agent Optimization**
 - **RTI:** [Testing Real-time Monitoring](#testing-real-time-monitoring)
@@ -268,7 +255,7 @@ Lastly, copy the value shown for "Event hub name" and paste it in the .env file 
 
 ---
 
-### 2. Configure the Frontend (React + Vite)
+### 2. Configure the Frontend
 You have already installed all required Python packages, now you only need to configure the frontend. 
 From the root project directory:
 
