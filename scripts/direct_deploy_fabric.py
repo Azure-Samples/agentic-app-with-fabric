@@ -112,12 +112,33 @@ LOGICAL_ID_TO_TYPE = {
     "1c1fcf8e-a488-804c-4cd4-0a116ba12b46": "KQLQueryset",       # QueryWorkBench
 }
 
-# Deployment phases — items in earlier phases must be deployed before later ones
+# Deployment phases — strict dependency order used by the standalone deploy_fabric.py script.
+# setup_workspace.py drives its own sequence and calls deploy_phase() directly; it does not
+# use this constant at all.
+#
+# Rationale for the order:
+#   Phase 1 — SQLDatabase first: tables are created via ODBC immediately after this phase.
+#   Phase 2 — CosmosDB: independent of SQL DB; shortcuts in Lakehouse will point here.
+#   Phase 3 — Lakehouse: shortcuts (SQL DB + Cosmos DB) are created via REST API after deploy.
+#   Phase 4 — SemanticModel: must exist AFTER Lakehouse SQL endpoint is ready & views are set.
+#             (In setup_workspace.py views are created between Phase 3 and this phase.)
+#   Phase 5 — Report + DataAgent: both reference the SemanticModel GUID; must follow Phase 4.
+#   Phase 6 — Eventhouse: parent of KQLDatabase.
+#   Phase 7 — KQLDatabase: child of Eventhouse; needs parent ID.
+#   Phase 8 — Eventstream: references Eventhouse/KQL IDs.
+#   Phase 9 — KQLDashboard + KQLQueryset: consumers of the KQL layer.
+#   Phase 10 — Notebook: standalone; last to deploy.
 DEPLOY_PHASES: list[list[str]] = [
-    ["SQLDatabase", "CosmosDBDatabase", "Eventhouse"],
-    ["KQLDatabase", "Lakehouse"],
+    ["SQLDatabase"],
+    ["CosmosDBDatabase"],
+    ["Lakehouse"],
+    ["SemanticModel"],
+    ["Report", "DataAgent"],
+    ["Eventhouse"],
+    ["KQLDatabase"],
     ["Eventstream"],
-    ["SemanticModel", "Notebook", "DataAgent", "Report", "KQLDashboard", "KQLQueryset"],
+    ["KQLDashboard", "KQLQueryset"],
+    ["Notebook"],
 ]
 
 # Files to exclude from definition parts (metadata-only or CI tooling)
@@ -358,6 +379,36 @@ class FabricClient:
         elif r.status_code not in (200, 204):
             self._raise(r)
         ok(f"Updated {item_type}: {display_name}")
+
+    def create_shortcut(self, lakehouse_id: str, name: str, path: str,
+                        target: dict) -> bool:
+        """
+        Create a single OneLake shortcut inside a Lakehouse via the Fabric REST API.
+        Returns True on success or if the shortcut already exists (HTTP 409).
+
+        Fabric REST API ignores shortcuts.metadata.json in the Lakehouse definition
+        parts — shortcuts MUST be created via this dedicated endpoint.
+        """
+        if self.dry_run:
+            ok(f"[DRY RUN] Would create shortcut '{name}' at {path}")
+            return True
+        r = requests.post(
+            f"{FABRIC_API}/workspaces/{self.workspace_id}/lakehouses/{lakehouse_id}/shortcuts",
+            headers=self._hdrs(),
+            json={"name": name, "path": path, "target": target},
+            timeout=30,
+        )
+        if r.status_code == 409:
+            info(f"  Shortcut '{name}' already exists — skipping.")
+            return True
+        if r.status_code >= 400:
+            try:
+                detail = r.json()
+            except Exception:
+                detail = r.text[:300]
+            warn(f"  Shortcut '{name}' failed (HTTP {r.status_code}): {detail}")
+            return False
+        return True
 
 
 # ── Artifact scanner ───────────────────────────────────────────────────────────
@@ -630,6 +681,74 @@ class DirectDeployer:
         self.skipped:  list[str] = []
         self.failed:   list[str] = []
 
+        # Lazily populated on first call to _ensure_initialized() / deploy_phase()
+        self._initialized: bool = False
+        self._all_artifacts: list[dict] = []
+
+    # ── Initialisation ─────────────────────────────────────────────────────────
+
+    def _ensure_initialized(self) -> None:
+        """
+        Scan artifacts, pre-seed IDs from persisted state, and fetch existing
+        workspace items.  Runs only once regardless of how many times it is called.
+        """
+        if self._initialized:
+            return
+
+        # Scan
+        self._all_artifacts = scan_artifacts(self.artifacts_dir)
+        info(f"Found {len(self._all_artifacts)} artifact(s) in {self.artifacts_dir}")
+
+        # Pre-seed logical_to_actual from saved state (supports reruns).
+        # Only accept real GUIDs — skip "unknown-…" placeholders from failed runs.
+        for entry in self.state.values():
+            lid = entry.get("logicalId", "")
+            aid = entry.get("itemId", "")
+            if lid and _is_guid(aid):
+                self.logical_to_actual[lid] = aid
+
+        # Fetch existing workspace items
+        if not self.dry_run:
+            info("Fetching existing workspace items…")
+            try:
+                self.existing_items = self.client.get_all_items()
+                info(f"  Found {len(self.existing_items)} existing item(s)")
+            except Exception as exc:
+                err(f"Could not list workspace items: {exc}")
+                raise
+
+        self._initialized = True
+
+    # ── Phase-level deploy ─────────────────────────────────────────────────────
+
+    def deploy_phase(self, types: list[str]) -> bool:
+        """
+        Deploy only the artifacts whose item_type is in `types`.
+
+        This is the primary deployment primitive used by setup_workspace.py so that
+        SQL table creation, view creation, and semantic-model patching can be
+        interleaved between phases.
+
+        Initialises on the first call (scanning artifacts, fetching existing items).
+        Persists state after every call.
+
+        Returns True if every item in the batch succeeded, False if any failed.
+        """
+        self._ensure_initialized()
+
+        artifacts = [a for a in self._all_artifacts if a["item_type"] in types]
+        if not artifacts:
+            info(f"  (no artifacts of type(s) {types} found — skipping)")
+            return True
+
+        ok_count = 0
+        for artifact in artifacts:
+            if self.deploy_artifact(artifact):
+                ok_count += 1
+
+        save_state(self.state)
+        return ok_count == len(artifacts)
+
     # ── Helpers ────────────────────────────────────────────────────────────────
 
     def _record(self, artifact: dict, item_id: str) -> None:
@@ -690,6 +809,67 @@ class DirectDeployer:
             patched.append(part)
         return patched
 
+    # ── Lakehouse shortcuts ────────────────────────────────────────────────────
+
+    def _create_lakehouse_shortcuts(self, folder: Path, lakehouse_id: str) -> None:
+        """
+        Read shortcuts.metadata.json, substitute logical IDs with real deployed IDs,
+        and create each shortcut via the Fabric Shortcuts REST API.
+
+        This is necessary because Fabric REST API silently ignores the
+        shortcuts.metadata.json file in Lakehouse definition parts — shortcuts
+        MUST be created through the dedicated shortcuts endpoint.
+
+        The shortcuts expose SQL Database and Cosmos DB tables in the Lakehouse SQL
+        analytics endpoint, which is required for views and the SemanticModel to work.
+        """
+        shortcuts_file = folder / "shortcuts.metadata.json"
+        if not shortcuts_file.exists():
+            return
+        try:
+            raw = shortcuts_file.read_text(encoding="utf-8")
+            raw = substitute_ids(raw, self.logical_to_actual, self.workspace_id)
+            shortcuts = json.loads(raw)
+        except Exception as exc:
+            warn(f"  Could not parse shortcuts.metadata.json: {exc}")
+            return
+        if not shortcuts:
+            return
+
+        # ── Diagnostic: verify ID substitution worked ─────────────────────────
+        if "00000000-0000-0000-0000-000000000000" in raw:
+            warn("  Workspace ID placeholder NOT substituted — workspace_id may be empty.")
+        # Check well-known logical IDs for SQL DB and Cosmos DB
+        _sql_logical    = "35fad3ec-f95a-87e5-435e-e81d13cb5ae1"
+        _cosmos_logical = "87fcaa33-7ad6-b4ca-4394-25e7ce7118b7"
+        for _lid, _lname in [(_sql_logical, "SQL DB"), (_cosmos_logical, "Cosmos DB")]:
+            if _lid in raw:
+                if _lid in self.logical_to_actual:
+                    warn(f"  Logical ID for {_lname} ({_lid[:8]}…) found in raw but NOT substituted "
+                         f"— substitution failed (actual={self.logical_to_actual[_lid][:8]}…?)")
+                else:
+                    warn(f"  Logical ID for {_lname} ({_lid[:8]}…) NOT in logical_to_actual "
+                         f"— deploy {_lname} before Lakehouse. Shortcut will fail with 404.")
+
+        import copy as _copy
+        info(f"  Creating {len(shortcuts)} Lakehouse shortcut(s) via API…")
+        ok_count = 0
+        for sc in shortcuts:
+            name   = sc.get("name", "?")
+            path   = sc.get("path", "/Tables").lstrip("/")  # strip leading slash
+
+            # Deep-copy target and strip "artifactType" from oneLake block.
+            # "artifactType" is an internal metadata field not accepted by the
+            # Fabric Shortcuts REST API — leaving it in causes HTTP 404
+            # EntityNotFound because the server-side entity lookup fails.
+            target = _copy.deepcopy(sc.get("target", {}))
+            if "oneLake" in target and "artifactType" in target["oneLake"]:
+                del target["oneLake"]["artifactType"]
+
+            if self.client.create_shortcut(lakehouse_id, name, path, target):
+                ok_count += 1
+        ok(f"  {ok_count}/{len(shortcuts)} shortcut(s) created.")
+
     # ── Deploy one artifact ────────────────────────────────────────────────────
 
     def deploy_artifact(self, artifact: dict) -> bool:
@@ -749,6 +929,9 @@ class DirectDeployer:
                 else:
                     info(f"  No definition parts for {name} — skipping update")
                 self._record(artifact, item_id)
+                # Re-create shortcuts on update so they stay in sync
+                if itype == "Lakehouse" and _is_guid(item_id):
+                    self._create_lakehouse_shortcuts(folder, item_id)
                 return True
             except Exception as exc:
                 err(f"Failed to update {itype}/{name}: {exc}")
@@ -782,6 +965,13 @@ class DirectDeployer:
                     warn(f"  KQL schema upload failed for {name}: {schema_exc} "
                          "(database created but schema not applied)")
 
+            # ── Lakehouse post-create: create shortcuts via dedicated API ──
+            # Fabric REST API ignores shortcuts.metadata.json in the definition.
+            # Shortcuts must be created explicitly so that SQL DB and Cosmos DB
+            # tables are visible in the Lakehouse SQL analytics endpoint.
+            if itype == "Lakehouse" and _is_guid(item_id):
+                self._create_lakehouse_shortcuts(folder, item_id)
+
             return True
         except Exception as exc:
             err(f"Failed to create {itype}/{name}: {exc}")
@@ -791,70 +981,43 @@ class DirectDeployer:
     # ── Full deploy pipeline ───────────────────────────────────────────────────
 
     def run(self) -> int:
+        """
+        Standalone full deployment pipeline — used by deploy_fabric.py.
+        setup_workspace.py drives its own sequence via deploy_phase() instead.
+        """
         head("Fabric Direct Deployment")
         info(f"Workspace : {self.workspace_id}")
         info(f"Artifacts : {self.artifacts_dir.resolve()}")
         info(f"Dry run   : {self.dry_run}")
         info(f"Force     : {self.force}")
 
-        # 1. Scan artifacts
-        artifacts = scan_artifacts(self.artifacts_dir)
-        info(f"Found {len(artifacts)} artifact(s) to process\n")
+        try:
+            self._ensure_initialized()
+        except Exception:
+            return 1
 
-        # 2. Pre-seed logical_to_actual from saved state (for reruns).
-        # Only accept real GUIDs — ignore "unknown-…" placeholders that may have
-        # been written by a previous failed run where the item ID couldn't be resolved.
-        for entry in self.state.values():
-            lid = entry.get("logicalId", "")
-            aid = entry.get("itemId", "")
-            if lid and _is_guid(aid):
-                self.logical_to_actual[lid] = aid
+        all_ok = True
 
-        # 3. Fetch existing workspace items
-        if not self.dry_run:
-            info("Fetching existing workspace items…")
-            try:
-                self.existing_items = self.client.get_all_items()
-                info(f"  Found {len(self.existing_items)} existing item(s)")
-            except Exception as exc:
-                err(f"Could not list workspace items: {exc}")
-                return 1
-
-        # 4. Build type → artifact map for phase ordering
-        type_map: dict[str, list[dict]] = {}
-        for art in artifacts:
-            type_map.setdefault(art["item_type"], []).append(art)
-
-        # 5. Deploy phase by phase
+        # Deploy phase by phase
         for phase_idx, phase_types in enumerate(DEPLOY_PHASES, 1):
-            phase_items = [a for t in phase_types for a in type_map.get(t, [])]
-            if not phase_items:
-                continue
-
             head(f"Phase {phase_idx}: {', '.join(phase_types)}")
-            for artifact in phase_items:
-                self.deploy_artifact(artifact)
+            if not self.deploy_phase(phase_types):
+                all_ok = False
 
-        # 6. Handle any item types not in the phase list
+        # Deploy any item types that are not listed in DEPLOY_PHASES
         handled_types = {t for phase in DEPLOY_PHASES for t in phase}
-        remainder = [a for a in artifacts if a["item_type"] not in handled_types]
+        remainder = [a for a in self._all_artifacts if a["item_type"] not in handled_types]
         if remainder:
-            head("Remaining items")
+            head("Remaining items (types not in deploy phases)")
             for artifact in remainder:
-                warn(f"  Item type '{artifact['item_type']}' is not in deploy phases — deploying anyway")
-                self.deploy_artifact(artifact)
-
-        # 7. Save state
-        if not self.dry_run:
+                warn(f"  Item type '{artifact['item_type']}' not in phases — deploying anyway")
+                if not self.deploy_artifact(artifact):
+                    all_ok = False
             save_state(self.state)
 
-        # 8. Print summary
         self._print_summary()
-
-        # 9. Write GitHub Actions step summary
         self._write_gh_summary()
-
-        return 0 if not self.failed else 1
+        return 0 if all_ok else 1
 
     def _print_summary(self) -> None:
         head("Deployment Summary")

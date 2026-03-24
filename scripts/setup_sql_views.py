@@ -88,7 +88,17 @@ SQL_TOKEN_SCOPE = "https://database.windows.net/.default"
 
 
 def _build_credential() -> ChainedTokenCredential:
-    creds = []
+    # AzureCliCredential is listed FIRST.
+    #
+    # Fabric SQL analytics endpoints (Lakehouse SQL endpoint) and Fabric SQL
+    # Database both require a *user-account* token via ODBC — service-principal
+    # tokens are rejected with "Validation of user's permissions failed".
+    #
+    # Putting AzureCliCredential first ensures the az-login session is always
+    # tried before any configured service principal, so interactive developer
+    # runs work correctly.  CI/CD pipelines that use `az login --service-principal`
+    # will also land here first and succeed if the SP has Fabric access.
+    creds: list = [AzureCliCredential()]
 
     if os.getenv("AZURE_FEDERATED_TOKEN_FILE") or os.getenv("AZURE_CLIENT_ID"):
         try:
@@ -105,7 +115,6 @@ def _build_credential() -> ChainedTokenCredential:
     if os.getenv("IDENTITY_ENDPOINT") or os.getenv("IMDS_ENDPOINT"):
         creds.append(ManagedIdentityCredential())
 
-    creds.append(AzureCliCredential())
     return ChainedTokenCredential(*creds)
 
 

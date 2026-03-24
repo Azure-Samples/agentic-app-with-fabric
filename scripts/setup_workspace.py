@@ -102,6 +102,14 @@ ENV_PATH      = Path("backend/.env")
 ENV_SAMPLE    = Path("backend/.env.sample")
 VIEWS_SQL     = Path("Data_Ingest/create_views.sql")
 EXPRESSIONS   = Path("Fabric_artifacts/banking_semantic_model.SemanticModel/definition/expressions.tmdl")
+# Table SQL files in dependency order (FKs: accounts→users, transactions→accounts)
+SQL_DB_TABLES_DIR = Path("Fabric_artifacts/agentic_app_db.SQLDatabase/dbo/Tables")
+TABLE_CREATION_ORDER = [
+    "users.sql", "accounts.sql", "transactions.sql",
+    "agent_definitions.sql", "chat_sessions.sql", "agent_traces.sql",
+    "tool_definitions.sql", "chat_history.sql", "tool_usage.sql",
+    "DocsChunks_Embeddings.sql", "PDF_RawChunks.sql",
+]
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 
@@ -562,7 +570,23 @@ def prompt_workspace(workspaces: list[dict]) -> Optional[str]:
 # ── Main orchestration class ───────────────────────────────────────────────────
 
 class WorkspaceSetup:
-    TOTAL_STEPS = 9
+    # Pipeline:
+    #  1  Workspace
+    #  2  SQL Database (deploy)
+    #  3  SQL Database Tables (create via ODBC)
+    #  4  Cosmos DB (deploy)
+    #  5  Lakehouse (deploy + shortcuts)
+    #  6  Wait for Lakehouse SQL Analytics Endpoint
+    #  7  Create SQL Views on Lakehouse Analytics Endpoint
+    #  8  Patch + Deploy Semantic Model
+    #  9  Deploy Report & DataAgent
+    # 10  Deploy Eventhouse, KQL, Eventstream & Dashboards
+    # 11  Deploy Notebook
+    # 12  Retrieve Connection Details
+    # 13  Populate backend/.env
+    # 14  Activate Eventstream
+    # 15  Summary
+    TOTAL_STEPS = 15
 
     def __init__(
         self,
@@ -587,8 +611,8 @@ class WorkspaceSetup:
         self.credential = build_credential()
         self.api        = FabricAPI(self.credential, dry_run)
 
-        # Will be populated during the run
-        self.deployed_ids: dict[str, str] = {}  # logicalId → actual item ID
+        # logicalId → actual item ID; kept in sync after every deploy_phase() call
+        self.deployed_ids: dict[str, str] = {}
         self.connection_details: dict[str, str] = {}
         self.warnings: list[str] = []
 
@@ -604,10 +628,102 @@ class WorkspaceSetup:
                 return self.deployed_ids.get(lid)
         return None
 
+    def _make_deployer(self, workspace_id: str) -> DirectDeployer:
+        """Create a single DirectDeployer that persists state across all phase calls."""
+        return DirectDeployer(
+            workspace_id=workspace_id,
+            credential=self.credential,
+            artifacts_dir=self.artifacts_dir,
+            dry_run=self.dry_run,
+            force=self.force_redeploy,
+        )
+
+    def _sync_ids(self, deployer: DirectDeployer) -> None:
+        """
+        Pull the latest logical→actual ID mappings from the deployer into
+        self.deployed_ids so subsequent step methods (which query self.deployed_ids)
+        can find the newly deployed item IDs.
+        """
+        self.deployed_ids.update(deployer.logical_to_actual)
+        # Also absorb any IDs that were previously persisted to disk
+        state = load_state()
+        for entry in state.values():
+            lid = entry.get("logicalId", "")
+            aid = entry.get("itemId", "")
+            if lid and aid and lid not in self.deployed_ids:
+                self.deployed_ids[lid] = aid
+
+    def _get_sql_db_conn_str(self, workspace_id: str) -> str:
+        """
+        Poll the Fabric API until the SQL Database reports status 'Online'
+        AND returns a valid connection string.
+
+        Fabric SQL Database is created asynchronously.  The REST API returns
+        a 201 Accepted immediately, but the underlying SQL Server instance —
+        and especially its permission / auth subsystem — can take 3-10 minutes
+        to fully initialise.  Connecting via ODBC before it is 'Online' causes
+        error 28000 "Validation of user's permissions failed" even for the
+        workspace admin, because the Fabric auth layer isn't ready yet.
+
+        We poll up to 15 minutes (45 × 20 s) so there is no need for a
+        separate sleep in the caller.
+        """
+        sql_logical = "35fad3ec-f95a-87e5-435e-e81d13cb5ae1"
+        sql_id = self.deployed_ids.get(sql_logical)
+        if not sql_id or self.dry_run:
+            return "dry-run-sql-conn" if self.dry_run else ""
+
+        info("Waiting for Fabric SQL Database to reach Online status…")
+        deadline     = time.time() + 900   # 15-minute hard cap
+        last_conn    = ""
+        poll_attempt = 0
+
+        while time.time() < deadline:
+            poll_attempt += 1
+            try:
+                db_item  = self.api.get_sql_database(workspace_id, sql_id)
+                props    = db_item.get("properties", {})
+
+                # Fabric may surface readiness through different field names.
+                status = (
+                    props.get("status")
+                    or props.get("provisioningStatus")
+                    or props.get("state")
+                    or ""
+                ).lower()
+
+                conn_str = _extract_sql_db_conn(db_item, "agentic_app_db")
+                if conn_str:
+                    last_conn = conn_str
+
+                if conn_str and (not status or status in ("online", "ready", "succeeded")):
+                    ok(f"SQL Database is Online (poll #{poll_attempt}).")
+                    return conn_str
+
+                info(f"  Poll #{poll_attempt}: status={status or '?'}, "
+                     f"conn={'✓' if conn_str else '…'}  — waiting 20 s…")
+            except Exception as exc:
+                info(f"  Poll #{poll_attempt}: API call failed ({exc}) — waiting 20 s…")
+
+            time.sleep(20)
+
+        # Timed out — return whatever we have and let the ODBC loop try anyway
+        if last_conn:
+            warn("SQL Database did not report Online within 15 min — attempting ODBC anyway.")
+            return last_conn
+
+        warn("Could not retrieve SQL Database connection string from Fabric API.")
+        self.warnings.append(
+            "FABRIC_SQL_CONNECTION_URL_AGENTIC not auto-populated. "
+            "Get it from: Fabric workspace → agentic_app_db → Settings → "
+            "Connection strings → ODBC"
+        )
+        return ""
+
     # ── Step 1: Workspace ──────────────────────────────────────────────────────
 
     def step_workspace(self) -> str:
-        self._step(1, "Workspace")
+        self._step(1, "Create / Select Workspace")
 
         if self.workspace_id:
             ok(f"Using existing workspace: {self.workspace_id}")
@@ -657,41 +773,14 @@ class WorkspaceSetup:
         ok(f"Created workspace '{self.workspace_name}'  id={ws_id}")
         return ws_id
 
-    # ── Step 2: Deploy artifacts ───────────────────────────────────────────────
-
-    def step_deploy_artifacts(self, workspace_id: str) -> None:
-        self._step(2, "Deploy Fabric Artifacts")
-
-        deployer = DirectDeployer(
-            workspace_id=workspace_id,
-            credential=self.credential,
-            artifacts_dir=self.artifacts_dir,
-            dry_run=self.dry_run,
-            force=self.force_redeploy,
-        )
-        rc = deployer.run()
-        if rc != 0:
-            err("Some artifacts failed to deploy (see above). Continuing with available items.")
-
-        # Capture the logical → actual ID mapping from the deployer
-        self.deployed_ids = deployer.logical_to_actual.copy()
-
-        # Also load from state file (for reruns)
-        state = load_state()
-        for entry in state.values():
-            lid = entry.get("logicalId", "")
-            aid = entry.get("itemId", "")
-            if lid and aid and lid not in self.deployed_ids:
-                self.deployed_ids[lid] = aid
-
-    # ── Step 3: Wait for Lakehouse SQL endpoint ────────────────────────────────
+    # ── Step 6: Wait for Lakehouse SQL endpoint ────────────────────────────────
 
     def step_wait_for_lakehouse_sql(self, workspace_id: str) -> tuple[str, str]:
         """
         Poll the Lakehouse item until its SQL analytics endpoint is provisioned.
         Returns (server_connection_string, lakehouse_sql_guid).
         """
-        self._step(3, "Wait for Lakehouse SQL Analytics Endpoint")
+        self._step(6, "Wait for Lakehouse SQL Analytics Endpoint")
 
         lh_logical = "fb30712b-d7a8-a06a-4004-373442ecab99"  # agentic_lake logicalId
         lh_id      = self.deployed_ids.get(lh_logical)
@@ -725,9 +814,10 @@ class WorkspaceSetup:
     # ── Step 4: Patch semantic model ───────────────────────────────────────────
 
     def step_patch_semantic_model(
-        self, workspace_id: str, sql_server: str, lakehouse_guid: str
+        self, workspace_id: str, sql_server: str, lakehouse_guid: str,
+        deployer,
     ) -> None:
-        self._step(4, "Patch & Re-deploy SemanticModel")
+        self._step(8, "Patch & Deploy Semantic Model")
 
         if not sql_server or not lakehouse_guid:
             warn("Missing SQL server or lakehouse GUID — skipping semantic model patch.")
@@ -738,62 +828,317 @@ class WorkspaceSetup:
             )
             return
 
-        # Patch the local file
+        # Patch expressions.tmdl in-place with the real server + GUID.
+        # On re-runs the file is already patched, so patch_expressions_tmdl
+        # will report "no substitution made" — that is expected and fine.
         patch_expressions_tmdl(sql_server, lakehouse_guid)
 
-        # Re-upload the SemanticModel definition
-        sm_logical = "c1a22701-9f6d-b640-4e9c-8d1ac4aeec57"
-        sm_id = self.deployed_ids.get(sm_logical)
-        if not sm_id:
-            warn("SemanticModel item ID not found — cannot re-upload definition.")
-            return
-
-        sm_folder = self.artifacts_dir / "banking_semantic_model.SemanticModel"
-        parts = []
-        for f in sorted(sm_folder.rglob("*")):
-            if not f.is_file() or f.name in EXCLUDE_FILES:
-                continue
-            rel = f.relative_to(sm_folder).as_posix()
-            content = f.read_bytes()
-            encoded = base64.b64encode(content).decode("ascii")
-            parts.append({"path": rel, "payload": encoded, "payloadType": "InlineBase64"})
-
-        info(f"Re-uploading SemanticModel definition ({len(parts)} parts)…")
-        if not self.dry_run:
-            self.api.update_item_definition(
-                workspace_id, sm_id, parts, "banking_semantic_model"
+        # Deploy (create on first run, update on re-run) the SemanticModel via
+        # deploy_phase so it goes through the same ID-substitution and async-
+        # polling logic as every other artifact.  We no longer call
+        # update_item_definition directly because the item may not exist yet.
+        info("Deploying SemanticModel (create or update)…")
+        if not deployer.deploy_phase(["SemanticModel"]):
+            warn("SemanticModel deployment may have failed — check output above.")
+            self.warnings.append(
+                "SemanticModel may not be correctly deployed. "
+                "Check output and re-run if needed."
             )
-        ok("SemanticModel patched and re-deployed.")
+        else:
+            ok("SemanticModel patched and deployed.")
 
     # ── Step 5: SQL views ──────────────────────────────────────────────────────
 
     def step_sql_views(self, workspace_id: str, sql_server: str, lakehouse_guid: str) -> None:
-        self._step(5, "Create SQL Views on Lakehouse Analytics Endpoint")
+        self._step(7, "Create SQL Views on Lakehouse Analytics Endpoint")
 
         if not sql_server:
             warn("No SQL analytics server available — skipping views setup.")
             self.warnings.append("SQL views NOT created. Run setup_sql_views.py manually.")
             return
 
-        # Build ODBC connection string for the Lakehouse SQL analytics endpoint
+        if not HAS_PYODBC:
+            warn("pyodbc not installed — skipping SQL views. Install with: pip install pyodbc")
+            self.warnings.append("SQL views NOT created. Run setup_sql_views.py manually.")
+            return
+
+        if self.dry_run:
+            ok(f"[DRY RUN] Would run {VIEWS_SQL} against SQL analytics endpoint")
+            return
+
+        if not VIEWS_SQL.exists():
+            warn(f"Views SQL file not found: {VIEWS_SQL}")
+            self.warnings.append(
+                f"SQL views NOT created ({VIEWS_SQL} missing). "
+                "Run setup_sql_views.py manually once the file is present."
+            )
+            return
+
+        # ── Authentication: same token-injection approach as step_create_sql_tables
+        # We use self.credential (the workspace deployment identity) so the ODBC
+        # identity always matches the workspace admin.  setup_sql_views.py uses its
+        # own AzureCliCredential which may differ when the workspace was deployed
+        # by a service principal, leading to 28000 / 18456 auth errors.
+        import struct
+        import pyodbc as _pyodbc
+
         conn_str = (
             f"Driver={{ODBC Driver 18 for SQL Server}};"
             f"Server={sql_server},1433;"
-            f"Database={lakehouse_guid};"
+            f"Database=agentic_lake;"
             f"Encrypt=yes;TrustServerCertificate=no;"
-            f"Connection Timeout=30;Authentication=ActiveDirectoryCli"
+            f"Connection Timeout=30"
         )
-        success = run_sql_views(conn_str, dry_run=self.dry_run)
-        if not success:
+
+        info("Acquiring Azure AD token for SQL Analytics Endpoint (deployment credential)…")
+        try:
+            _tok = self.credential.get_token("https://database.windows.net/.default")
+
+            token_bytes = _tok.token.encode("utf-16-le")
+
+            connect_kwargs: dict = {
+
+                "attrs_before": {
+
+                    1256: struct.pack(f'<I{len(token_bytes)}s', len(token_bytes), token_bytes)
+
+                }
+
+            }
+            ok("Token acquired.")
+        except Exception as exc:
+            err(f"Could not acquire Azure AD token: {exc}")
             self.warnings.append(
-                "SQL views may not have been created fully. "
-                "Run: python scripts/setup_sql_views.py --connection-string '...' manually."
+                "SQL views NOT created — token unavailable. "
+                "Run: python scripts/setup_sql_views.py manually."
+            )
+            return
+
+        # Retry loop — Lakehouse SQL endpoint can take a moment after shortcut
+        # creation before the auth subsystem accepts new connections.
+        conn = None
+        for attempt in range(1, 6):
+            info(f"Connecting to SQL Analytics Endpoint (attempt {attempt}/5)…")
+            try:
+                conn = _pyodbc.connect(conn_str, **connect_kwargs)
+                conn.autocommit = True
+                ok("Connected to Lakehouse SQL Analytics Endpoint.")
+                break
+            except Exception as exc:
+                if attempt < 5:
+                    warn(f"  Connection attempt {attempt} failed: {exc}")
+                    info("  Waiting 30 s…")
+                    time.sleep(30)
+                else:
+                    err(f"Failed to connect after 5 attempts: {exc}")
+                    self.warnings.append(
+                        "SQL views NOT created (connection failed). "
+                        "Run: python scripts/setup_sql_views.py manually once the "
+                        "Lakehouse SQL endpoint is accessible."
+                    )
+                    return
+
+        # ── Execute views SQL ──────────────────────────────────────────────────
+        sql = VIEWS_SQL.read_text(encoding="utf-8")
+        batches = [
+            b.strip() for b in
+            re.split(r"^\s*GO\s*$", sql, flags=re.IGNORECASE | re.MULTILINE)
+            if b.strip()
+        ]
+        info(f"Executing {len(batches)} SQL batch(es) from {VIEWS_SQL.name}…")
+
+        cursor = conn.cursor()
+        created = skipped = failed = 0
+
+        for i, batch in enumerate(batches, 1):
+            view_match = re.search(
+                r"CREATE\s+VIEW\s+(?:\[?dbo\]?\.\[?)?(\w+)\]?",
+                batch, re.IGNORECASE
+            )
+            view_name = view_match.group(1) if view_match else f"batch_{i}"
+
+            # Skip if view already exists
+            try:
+                cursor.execute(
+                    "SELECT 1 FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_NAME = ?",
+                    (view_name,)
+                )
+                if cursor.fetchone():
+                    info(f"  View '{view_name}' already exists — skipping.")
+                    skipped += 1
+                    continue
+            except Exception:
+                pass  # If existence check fails, attempt creation anyway
+
+            try:
+                cursor.execute(batch)
+                ok(f"  Created view: {view_name}")
+                created += 1
+            except Exception as exc:
+                warn(f"  Failed to create view '{view_name}': {exc}")
+                failed += 1
+
+        cursor.close()
+        conn.close()
+
+        if failed == 0:
+            ok(f"SQL views setup complete: {created} created, {skipped} skipped.")
+        else:
+            warn(f"SQL views completed with errors: {created} created, {skipped} skipped, {failed} FAILED.")
+            self.warnings.append(
+                f"Some SQL views failed to create ({failed} error(s)). "
+                "Run: python scripts/setup_sql_views.py manually to retry."
             )
 
-    # ── Step 6: Get all connection details ─────────────────────────────────────
+    # ── Step 7: Create SQL Database tables ────────────────────────────────────
+
+    def step_create_sql_tables(self, sql_db_conn: str) -> None:
+        self._step(3, "Create SQL Database Tables")
+
+        if not HAS_PYODBC:
+            warn("pyodbc not installed — skipping table creation. Install with: pip install pyodbc")
+            self.warnings.append("SQL Database tables NOT created. Run agentic_data_tables_setup_day0.sql manually.")
+            return
+        if not sql_db_conn:
+            warn("No SQL Database connection string — skipping table creation.")
+            self.warnings.append(
+                "SQL Database tables NOT created. Get the connection string from the Fabric workspace "
+                "→ agentic_app_db → Settings → Connection strings → ODBC, then run "
+                "Data_Ingest/agentic_data_tables_setup_day0.sql manually."
+            )
+            return
+        if self.dry_run:
+            ok("[DRY RUN] Would create SQL Database tables")
+            return
+
+        # Collect SQL files in dependency order, then any remainder not in the list
+        tables_dir = SQL_DB_TABLES_DIR
+        if not tables_dir.exists():
+            warn(f"Tables directory not found: {tables_dir} — skipping table creation.")
+            return
+
+        ordered = [tables_dir / f for f in TABLE_CREATION_ORDER if (tables_dir / f).exists()]
+        all_files = set(tables_dir.glob("*.sql"))
+        remainder = sorted(f for f in all_files if f.name not in TABLE_CREATION_ORDER)
+        sql_files = ordered + remainder
+
+        if not sql_files:
+            warn("No .sql files found in tables directory — skipping.")
+            return
+
+        # Authentication: token injection via SQL_COPT_SS_ACCESS_TOKEN (attr 1256)
+        # -----------------------------------------------------------------------
+        # We deliberately avoid Authentication=ActiveDirectoryCli because it is
+        # not supported on all ODBC Driver 18 builds/platforms.
+        #
+        # We use self.credential — the SAME credential chain that deployed the
+        # workspace and SQL Database — so the ODBC identity always matches the
+        # workspace admin that Fabric authorises.
+        #
+        # Using a different credential (e.g. AzureCliCredential specifically when
+        # the workspace was deployed by a service principal) causes error 28000
+        # "Validation of user's permissions failed / Read item permission" because
+        # the ODBC identity is not a workspace member.
+        import struct
+        import pyodbc as _pyodbc
+
+        base       = sql_db_conn.strip().strip('"').strip("'")
+        clean_conn = re.sub(r";?Authentication=[^;]+", "", base).rstrip(";")
+
+        info("Acquiring Azure AD token for SQL Database (using deployment credential)…")
+        try:
+            _tok = self.credential.get_token("https://database.windows.net/.default")
+
+            token_bytes = _tok.token.encode("utf-16-le")
+
+            connect_kwargs: dict = {
+
+                "attrs_before": {
+
+                    1256: struct.pack(f'<I{len(token_bytes)}s', len(token_bytes), token_bytes)
+
+                }
+
+            }
+            ok("Token acquired.")
+        except Exception as exc:
+            err(f"Could not acquire Azure AD token: {exc}")
+            err("Ensure az login has been run (developer) or credentials are configured (CI).")
+            self.warnings.append(
+                "SQL Database tables NOT created — token unavailable. "
+                "Run 'az login', then re-run setup, or execute "
+                "Data_Ingest/agentic_data_tables_setup_day0.sql manually."
+            )
+            return
+
+        # Fabric SQL Database can take a few minutes to become accessible after
+        # creation.  Retry with 30-second intervals for up to 5 minutes.
+        conn = None
+        max_attempts = 10
+        for attempt in range(1, max_attempts + 1):
+            info(f"Connecting to SQL Database to create tables (attempt {attempt}/{max_attempts})…")
+            try:
+                conn = _pyodbc.connect(clean_conn, **connect_kwargs)
+                conn.autocommit = True
+                ok("Connected to SQL Database.")
+                break
+            except Exception as exc:
+                if attempt < max_attempts:
+                    warn(f"  Connection attempt {attempt} failed: {exc}")
+                    info("  Waiting 30 s for SQL Database to become accessible…")
+                    time.sleep(30)
+                else:
+                    err(f"Failed to connect to SQL Database after {max_attempts} attempts: {exc}")
+                    self.warnings.append(
+                        "SQL Database tables NOT created (connection failed after retries). "
+                        "Run Data_Ingest/agentic_data_tables_setup_day0.sql manually."
+                    )
+                    return
+
+        ok("Connected to SQL Database.")
+        cursor = conn.cursor()
+        created = skipped = failed = 0
+
+        for sql_file in sql_files:
+            sql = sql_file.read_text(encoding="utf-8")
+            batches = [b.strip() for b in re.split(r"^\s*GO\s*$", sql,
+                       flags=re.IGNORECASE | re.MULTILINE) if b.strip()]
+            for batch in batches:
+                table_match = re.search(r"CREATE\s+TABLE\s+(?:\[?dbo\]?\.\[?)?(\w+)\]?",
+                                        batch, re.IGNORECASE)
+                table_name = table_match.group(1) if table_match else sql_file.stem
+                try:
+                    cursor.execute(
+                        "SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?",
+                        (table_name,)
+                    )
+                    if cursor.fetchone():
+                        info(f"  Table '{table_name}' already exists — skipping.")
+                        skipped += 1
+                        continue
+                    cursor.execute(batch)
+                    ok(f"  Created table: {table_name}")
+                    created += 1
+                except Exception as exc:
+                    err(f"  Failed to create table '{table_name}': {exc}")
+                    failed += 1
+
+        cursor.close()
+        conn.close()
+
+        if failed == 0:
+            ok(f"SQL tables setup complete: {created} created, {skipped} skipped.")
+        else:
+            warn(f"SQL tables setup finished with errors: {created} created, {skipped} skipped, {failed} FAILED.")
+            self.warnings.append(
+                f"Some SQL tables failed to create ({failed} errors). "
+                "Check output above and re-run Data_Ingest/agentic_data_tables_setup_day0.sql manually if needed."
+            )
+
+    # ── Step 7: Get all connection details ─────────────────────────────────────
 
     def step_get_connections(self, workspace_id: str) -> dict[str, str]:
-        self._step(6, "Retrieve Connection Details")
+        self._step(12, "Retrieve Connection Details")
         details: dict[str, str] = {}
 
         # ── SQL Database (agentic_app_db) ──────────────────────────────────────
@@ -884,19 +1229,19 @@ class WorkspaceSetup:
 
         return details
 
-    # ── Step 7: Write .env ─────────────────────────────────────────────────────
+    # ── Step 8: Write .env ─────────────────────────────────────────────────────
 
     def step_write_env(self, connection_details: dict[str, str]) -> None:
-        self._step(7, "Populate backend/.env")
+        self._step(13, "Populate backend/.env")
         if not connection_details:
             warn("No connection details to write.")
             return
         write_env(connection_details, self.env_path)
 
-    # ── Step 8: Activate Eventstream ──────────────────────────────────────────
+    # ── Step 9: Activate Eventstream ──────────────────────────────────────────
 
     def step_activate_eventstream(self, workspace_id: str) -> None:
-        self._step(8, "Activate Eventstream Pipeline")
+        self._step(14, "Activate Eventstream Pipeline")
 
         stream_logical = "b43b90ba-f1e3-843b-4a09-80ea104eee0d"
         stream_id = self.deployed_ids.get(stream_logical)
@@ -918,10 +1263,10 @@ class WorkspaceSetup:
                 "click 'Edit' → 'Publish' to activate real-time streaming."
             )
 
-    # ── Step 9: Final summary ──────────────────────────────────────────────────
+    # ── Step 10: Final summary ─────────────────────────────────────────────────
 
     def step_summary(self, workspace_id: str) -> None:
-        self._step(9, "Setup Complete")
+        self._step(15, "Setup Complete")
 
         print(f"\n{'─'*70}")
         print(f"{B}{'✅ Fabric Workspace Ready':^70}{X}")
@@ -952,39 +1297,99 @@ class WorkspaceSetup:
         head("🏦 Agentic Banking App — One-Command Workspace Setup")
 
         try:
-            # 1. Workspace
+            # ── Step 1: Workspace ──────────────────────────────────────────────
             ws_id = self.step_workspace()
 
-            # 2. Deploy all artifacts
-            self.step_deploy_artifacts(ws_id)
+            # Single deployer instance — persists logical→actual ID state across
+            # all deploy_phase() calls so each phase can substitute IDs from
+            # previously deployed items.
+            deployer = self._make_deployer(ws_id)
 
-            # 3. Wait for Lakehouse SQL endpoint
+            # ── Step 2: SQL Database ───────────────────────────────────────────
+            # Deploy first so tables can be created immediately after.
+            self._step(2, "Deploy SQL Database")
+            deployer.deploy_phase(["SQLDatabase"])
+            self._sync_ids(deployer)
+
+            # ── Step 3: SQL Database Tables ────────────────────────────────────
+            # Create all tables via ODBC right after the DB is provisioned.
+            # The retry loop in step_create_sql_tables waits up to 5 min for the
+            # DB to become accessible (Fabric SQL DB can take a few minutes).
+            sql_db_conn = self._get_sql_db_conn_str(ws_id)
+            self.step_create_sql_tables(sql_db_conn)
+
+            # ── Step 4: Cosmos DB ──────────────────────────────────────────────
+            # Independent of SQL DB; Lakehouse shortcuts will reference it.
+            self._step(4, "Deploy Cosmos DB")
+            deployer.deploy_phase(["CosmosDBDatabase"])
+            self._sync_ids(deployer)
+
+            # ── Step 5: Lakehouse ──────────────────────────────────────────────
+            # After deploying, shortcuts to SQL DB tables AND Cosmos DB containers
+            # are created automatically via the Fabric Shortcuts REST API.
+            # Both SQL DB (step 2) and Cosmos DB (step 4) must exist first so the
+            # shortcut targets resolve correctly.
+            self._step(5, "Deploy Lakehouse + Shortcuts")
+            deployer.deploy_phase(["Lakehouse"])
+            self._sync_ids(deployer)
+
+            # ── Step 6: Wait for Lakehouse SQL Analytics Endpoint ─────────────
+            # Fabric provisions the SQL analytics endpoint asynchronously after
+            # Lakehouse creation.  We poll until it is ready (up to 5 min).
             sql_server, lakehouse_guid = self.step_wait_for_lakehouse_sql(ws_id)
 
-            # 4. Patch + re-deploy SemanticModel
-            self.step_patch_semantic_model(ws_id, sql_server, lakehouse_guid)
-
-            # 5. SQL views
+            # ── Step 7: SQL Views ──────────────────────────────────────────────
+            # Views reference the SQL DB tables that are now visible in the
+            # Lakehouse SQL analytics endpoint via the shortcuts created in step 5.
             self.step_sql_views(ws_id, sql_server, lakehouse_guid)
 
-            # 6. Get connection details
-            conn = self.step_get_connections(ws_id)
+            # ── Step 8: Semantic Model ─────────────────────────────────────────
+            # Patch expressions.tmdl with the real SQL analytics server + GUID,
+            # then deploy (or re-deploy) the SemanticModel via deploy_phase so
+            # that ID substitution and async polling are handled correctly.
+            # On a first run this CREATES the item; on a re-run it UPDATES it.
+            self.step_patch_semantic_model(ws_id, sql_server, lakehouse_guid, deployer)
+            # Pick up the newly deployed / updated SemanticModel ID so the
+            # Report (step 9) can substitute it into definition.pbir.
+            self._sync_ids(deployer)
 
-            # 7. Write .env
+            # ── Step 9: Report & DataAgent ─────────────────────────────────────
+            # Both reference the SemanticModel GUID which is now in deployed_ids.
+            self._step(9, "Deploy Report & DataAgent")
+            deployer.deploy_phase(["Report", "DataAgent"])
+            self._sync_ids(deployer)
+
+            # ── Step 10: Eventhouse, KQL, Eventstream, Dashboards ─────────────
+            # Deploy in strict dependency order:
+            #   Eventhouse → KQLDatabase (child) → Eventstream → Dashboards
+            self._step(10, "Deploy Eventhouse, KQL, Eventstream & Dashboards")
+            deployer.deploy_phase(["Eventhouse"])
+            deployer.deploy_phase(["KQLDatabase"])
+            deployer.deploy_phase(["Eventstream"])
+            deployer.deploy_phase(["KQLDashboard", "KQLQueryset"])
+            self._sync_ids(deployer)
+
+            # ── Step 11: Notebook ──────────────────────────────────────────────
+            self._step(11, "Deploy Notebook")
+            deployer.deploy_phase(["Notebook"])
+            self._sync_ids(deployer)
+
+            # ── Step 12 + 13: Connection details → .env ───────────────────────
+            conn = self.step_get_connections(ws_id)
             self.step_write_env(conn)
 
-            # 8. Activate Eventstream
+            # ── Step 14: Activate Eventstream ─────────────────────────────────
             self.step_activate_eventstream(ws_id)
 
-            # 9. Summary
+            # ── Step 15: Summary ───────────────────────────────────────────────
             self.step_summary(ws_id)
 
-            return 0 if not self.warnings else 0  # warnings ≠ failure
+            return 0
 
         except KeyboardInterrupt:
             print("\nInterrupted by user.")
             return 130
-        except SystemExit as e:
+        except SystemExit:
             raise
         except Exception as e:
             err(f"Unexpected error: {e}")
