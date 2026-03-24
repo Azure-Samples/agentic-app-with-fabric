@@ -1,0 +1,183 @@
+table ContentIssues
+	lineageTag: 61a42385-3b60-4080-93eb-6d71bee05c8a
+	sourceLineageTag: [dbo].[ContentIssues]
+
+	column session_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 7dc8b139-8f9f-4890-b083-adf7dbdacbcb
+		sourceLineageTag: session_id
+		summarizeBy: none
+		sourceColumn: session_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column trace_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 724c6893-e80d-49ac-bc0e-14b59b1f8eaf
+		sourceLineageTag: trace_id
+		summarizeBy: none
+		sourceColumn: trace_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column user_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 4a696bb8-a1cb-44da-a523-c3b7928e528d
+		sourceLineageTag: user_id
+		summarizeBy: none
+		sourceColumn: user_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column agent_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 4ef3c880-fed7-472d-904c-7c83b783d020
+		sourceLineageTag: agent_id
+		summarizeBy: none
+		sourceColumn: agent_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column message_type
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 3c14ded8-aa57-4011-aed2-13d061725a5f
+		sourceLineageTag: message_type
+		summarizeBy: none
+		sourceColumn: message_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column content
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 7aef3745-830a-4091-8b9c-e6df989cf7c4
+		sourceLineageTag: content
+		summarizeBy: none
+		sourceColumn: content
+
+		annotation SummarizationSetBy = Automatic
+
+	column content_filter_results
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: a3b0bcc8-8e24-4345-8c85-f2dbc82fd341
+		sourceLineageTag: content_filter_results
+		summarizeBy: none
+		sourceColumn: content_filter_results
+
+		annotation SummarizationSetBy = Automatic
+
+	column hate_filtered
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: 4f64dec0-889e-4fc1-8ac4-03262b23e296
+		sourceLineageTag: hate_filtered
+		summarizeBy: none
+		sourceColumn: hate_filtered
+
+		annotation SummarizationSetBy = Automatic
+
+	column hate_severity
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: 040c8ed4-0cf0-48c8-a0dd-ec9d43580263
+		sourceLineageTag: hate_severity
+		summarizeBy: none
+		sourceColumn: hate_severity
+
+		annotation SummarizationSetBy = Automatic
+
+	column jailbreak_filtered
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: bf02e9e4-01d4-463f-8c5e-2de417f8290b
+		sourceLineageTag: jailbreak_filtered
+		summarizeBy: none
+		sourceColumn: jailbreak_filtered
+
+		annotation SummarizationSetBy = Automatic
+
+	column jailbreak_detected
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: 737b23c4-fc03-4303-8efa-73ca956de02a
+		sourceLineageTag: jailbreak_detected
+		summarizeBy: none
+		sourceColumn: jailbreak_detected
+
+		annotation SummarizationSetBy = Automatic
+
+	column self_harm_filtered
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: 25c61155-9af2-439c-aee9-380234ab3801
+		sourceLineageTag: self_harm_filtered
+		summarizeBy: none
+		sourceColumn: self_harm_filtered
+
+		annotation SummarizationSetBy = Automatic
+
+	column self_harm_severity
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: e35d03c2-71bf-4259-84d5-9d9a3920d4c5
+		sourceLineageTag: self_harm_severity
+		summarizeBy: none
+		sourceColumn: self_harm_severity
+
+		annotation SummarizationSetBy = Automatic
+
+	column sexual_filtered
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: c69e1c45-a027-47d2-83ac-ee4539baee06
+		sourceLineageTag: sexual_filtered
+		summarizeBy: none
+		sourceColumn: sexual_filtered
+
+		annotation SummarizationSetBy = Automatic
+
+	column sexual_severity
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: 50e9bc90-d395-4bb2-b95c-7827645bd858
+		sourceLineageTag: sexual_severity
+		summarizeBy: none
+		sourceColumn: sexual_severity
+
+		annotation SummarizationSetBy = Automatic
+
+	column violence_filtered
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: 101c876c-98a0-4005-89b9-2ab9275451e0
+		sourceLineageTag: violence_filtered
+		summarizeBy: none
+		sourceColumn: violence_filtered
+
+		annotation SummarizationSetBy = Automatic
+
+	column violence_severity
+		dataType: string
+		sourceProviderType: nvarchar(8000)
+		lineageTag: b54c23ec-7309-4dd7-8241-8e552c3cb16a
+		sourceLineageTag: violence_severity
+		summarizeBy: none
+		sourceColumn: violence_severity
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ContentIssues = entity
+		mode: directLake
+		source
+			entityName: ContentIssues
+			schemaName: dbo
+			expressionSource: DatabaseQuery
+
+	annotation PBI_ResultType = Table
+
