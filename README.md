@@ -4,36 +4,36 @@
 #### NOTE: The main branch was last updated on: 🟢2026-03-24🟢
 
 ## 📑 Table of Contents
-- [Intro](#intro)
-- [Architecture \& Tech Stack](#architecture--tech-stack)
-- [✨ Features](#-features)
-  - [Agentic Banking Application](#banking-application)
+  [💡 **Intro**](#intro)
 
-  - [Analytics Service for Agentic Operational Data](#analytics-service-for-agentic-operational-data)
+  [🔧 **Architecture and Tech Stack**](#-architecture-and-tech-stack)
 
----
-**Follow Below Steps to deploy and run the app!**
-- **Step 0:**[🔧 Prerequisites](#-prerequisites)
-- **Step 1**: [Deploy Required Microsoft Fabric Workloads](#deploy-required-microsoft-fabric-workloads) 
-- **Step 2:** [Run the app locally!](#follow-below-steps-to-run-the-app-locally)
+  [✨ **Features**](#-features)
+- [Agentic Banking Application](#banking-application)
+
+- [Analytics Service for Agentic Operational Data](#analytics-service-for-agentic-operational-data)
 
 ---
-**Explore Fabric Workloads for Monitoring, Business Intelligence and Agent Optimization!**
+
+[🚀 **How to Deploy and run the app!**](#-how-to-deploy-and-run-the-app)
+1. [Prerequisites](#-prerequisites)
+2. [Set up Resources and Deploy Microsoft Fabric Workloads](#set-up-resources-and-deploy-microsoft-fabric-workloads) 
+3. [Set up Environment Variables and Run the App!](#follow-below-steps-to-run-the-app-locally)
+
+---
+[⚗️ **Explore Fabric Workloads!**](#️-explore-fabric-workloads)
 - **RTI:** [Testing Real-time Monitoring](#testing-real-time-monitoring)
-
 - **Power BI:** [Explore Agentic Analytics](#explore-agentic-analytics)
-
 - **Fabric Notebooks**: [Evaluate agent performance via Azure Evaluation Framework (Optional)](#evaluate-agent-performance-via-azure-evaluation-framework-optional)
   
 ---
 
-**Learn More & Contribute!**
+[🧑‍💻 **Learn More & Contribute!**](#-learn-more-and-contribute)
 - [Explore how to create and Ingest Embeddings from PDF (optional)](#explore-how-to-create-and-ingest-embeddings-from-pdf-optional)
 - [Workshop Content](workshop)
 - [Give Feedback & Contribute!!](#contributing)
 
 
----
 ---
 
 ## 💡Intro 
@@ -45,7 +45,7 @@
 
 Through a hands-on interface, users can see the practical difference between writing a new transaction to the database, running complex analytical queries on historical data, and using natural language to ask an agent to query the database for them.
 
-## Architecture & Tech Stack 
+## 🔧 Architecture and Tech Stack 
 
 ![arch](assets/arch_v1.png)
 
@@ -97,8 +97,9 @@ https://aka.ms/HostedAgenticAppFabric
 
 - As the app is used, the agentic operational data is captured, modeled, and used to reflect valuable analytics and insights via Fabric features such as Power BI reports, data agent, notebooks, real-time dashboards, etc.
 ---
+## 🚀 How to Deploy and Run the App!
 
-## 🔧 Prerequisites
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or later)
 - [Python](https://www.python.org/) (3.11.9 or higher)
@@ -111,7 +112,7 @@ https://aka.ms/HostedAgenticAppFabric
 - We recommend VSCode as tested in VS Code only
 
 
-## Deploy Required Microsoft Fabric Workloads
+### Set Up Resources and Deploy Microsoft Fabric Workloads
 
 Demo:
 
@@ -121,7 +122,6 @@ Demo:
 
 ---
 
-### Set up required resources (One time)
 
 #### 1. Set up your repo
 - Clone this repo: navigate to the repository on GitHub and click the "Code" button. Copy the URL provided for cloning.
@@ -157,7 +157,7 @@ pip install -r requirements.txt
 ```
 
 #### 4. Login to your Fabric account
- **DO NOT FORGET TO DO BELOW !!!** 
+ **IMPORTANT!** 
 
 For authentication and connecting to the Fabric resources for both deployment stage and running the app, you must run below in a Terminal window:
 ```bash
@@ -187,10 +187,10 @@ After above steps are done, below is what you should see in the lineage view of 
 
 ![lineage](assets/fab_lineage.png)
 
-Having issues with this method? Checkout how you can deploy artifacts via Git integration feature in your workspace (more manual steps): [Deploy via Git Integration](git_integration_deployment.md)
-## Follow below steps to run the app locally!
+Having issues with this method? Checkout how you can deploy artifacts via Git integration feature in your workspace (more manual steps): [**Deploy via Git Integration**](git_integration_deployment.md)
+### Follow below steps to run the app locally!
 Now that all resources are set up, follow below steps to run and test the app:
-### 1. Configure Environment Variables
+#### 1. Configure Environment Variables
 
 Before running the application, you need to configure your environment variables. This file stores all the secret keys and connection strings your application needs to connect to Azure and Microsoft Fabric resources.
 
@@ -253,7 +253,7 @@ Lastly, copy the value shown for "Event hub name" and paste it in the .env file 
 
 ---
 
-### 2. Configure the Frontend
+#### 2. Configure the Frontend
 You have already installed all required Python packages, now you only need to configure the frontend. 
 From the root project directory:
 
@@ -263,13 +263,13 @@ npm install
 ---
 
 
-### 3. Run the Application
+#### 3. Run the Application
 
 Open **two** terminal windows.
 
 
 
-#### Terminal 1: Start Backend
+**Terminal 1** - Start the Backend
 
 From backend folder, run below in terminal (**ensure you have your virtual environment activated for this!**  )
 
@@ -282,7 +282,7 @@ This will launch two services:
 
 **You will be prompted for your Fabric credentials during this so watch out for window pop ups and in taskbar!**
 
-#### Terminal 2: Start Frontend
+**Terminal 2** - Start the Frontend
 
 Ensure you are in the root of your folder and run below:
 
@@ -293,13 +293,15 @@ npm run dev
 Frontend will run on: [http://localhost:5173](http://localhost:5173)
 
 ---
-## Testing Real-time Monitoring
+## ⚗️ Explore Fabric Workloads!
+
+### Testing Real-time Monitoring
 
 During the app set up process, we already deployed all required Fabric artifacts, including the ones to enable streaming and storing real-time app usage logs. 
 
 While almost all is in place, there are still a few steps remaining to fully set up the end to end process of streaming data and enabling the real-time dashboard for monitoring purposes. 
 
-### Follow below steps to finalize real-time intelligence pipeline in Fabric
+Follow below steps to finalize real-time intelligence pipeline in Fabric
 
 #### Connect your Eventhouse database to the Eventstream
 
@@ -356,7 +358,7 @@ Add all queries to the dashboard. Also feel free to write new queries for other 
 
 In the application, we have built in an easy way to mimic sensitive content message log without actually getting blocked by the OpenAI api. To test, when chatting you can simply reply with your desired filter category (ex. violence, jailbreak, etc.).
 
-## Explore Agentic Analytics
+### Explore Agentic Analytics
 
 As you use the app:
 
@@ -366,7 +368,7 @@ As you use the app:
 - Agentic_Insights report gets updated based on most recent data
 
 ---
-## Evaluate agent performance via Azure Evaluation Framework (Optional)
+### Evaluate agent performance via Azure Evaluation Framework (Optional)
 
 As part of Fabric artifacts, we have included a notebook (QA_Evaluation_Notebook) that computes four scores (intent resolution, relevance, coherence and fluency) reflecting the agent's performance when answsering user requests. These scores are calculated based on Question/Answer pairs using [Azure AI Evaluation](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/agent-evaluate-sdk)
 You can set up this notebook in your Fabric workspace and run by following below steps:
@@ -382,8 +384,8 @@ You can set up this notebook in your Fabric workspace and run by following below
 3. Now you can run the cells in the notebook in order. After all is run successfully there should be a new table created in the "agentic_lake" called **answerqualityscores_withcontext** which has all the scores.
 
 
-
-## Explore how to create and Ingest Embeddings from PDF (optional)
+## 🧑‍💻 Learn More and Contribute!
+### Explore how to create and Ingest Embeddings from PDF (optional)
 We automatically ingested embeddings to ensure a quick onboarding. If you are interested to see how to do it, we have provided a python script:
 
 1. Copy the .env file in the folder **Data_Ingest**.
@@ -393,7 +395,7 @@ We automatically ingested embeddings to ensure a quick onboarding. If you are in
 python Ingest_pdf.py
 ```
 
-##  Contributing
+###  Contributing
 
 Contributions are welcome!
 
