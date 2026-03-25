@@ -1,16 +1,16 @@
 
 # 🏦  Agentic Banking App with Microsoft Fabric
 
-#### NOTE: The main branch was last updated on: 🟢2026-03-12🟢
+#### NOTE: The main branch was last updated on: 🟢2026-03-24🟢
 
 ## 📑 Table of Contents
 - [Intro](#intro)
 - [Architecture \& Tech Stack](#architecture--tech-stack)
 - [✨ Features](#-features)
-  - [Banking Application](#banking-application)
-    - [Agents](#agents)
+  - [Agentic Banking Application](#banking-application)
+
   - [Analytics Service for Agentic Operational Data](#analytics-service-for-agentic-operational-data)
-    - [App insights and analytics in Fabric](#app-insights-and-analytics-in-fabric)
+
 ---
 **Follow Below Steps to deploy and run the app!**
 - **Step 0:**[🔧 Prerequisites](#-prerequisites)
@@ -18,11 +18,9 @@
 - **Step 2:** [Run the app locally!](#follow-below-steps-to-run-the-app-locally)
 
 ---
-**Explore Fabric Workloads for Monitoring, Business Intelligence and Agent Optimization**
+**Explore Fabric Workloads for Monitoring, Business Intelligence and Agent Optimization!**
 - **RTI:** [Testing Real-time Monitoring](#testing-real-time-monitoring)
-  - [Follow below steps to finalize real-time intelligence pipeline in Fabric](#follow-below-steps-to-finalize-real-time-intelligence-pipeline-in-fabric)
-    - [Connect your Eventhouse database to the Eventstream](#connect-your-eventhouse-database-to-the-eventstream)
-    - [Add content safety views to the Real-Time Dashboard](#add-content-safety-views-to-the-real-time-dashboard)
+
 - **Power BI:** [Explore Agentic Analytics](#explore-agentic-analytics)
 
 - **Fabric Notebooks**: [Evaluate agent performance via Azure Evaluation Framework (Optional)](#evaluate-agent-performance-via-azure-evaluation-framework-optional)
