@@ -1,0 +1,55 @@
+table session_duration_date
+	lineageTag: 0beacace-6ef6-4fd8-941c-4838c8dad7b5
+	sourceLineageTag: [dbo].[session_duration_date]
+
+	column user_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 10fe7b9f-451a-4726-ac54-45d2f4a0de12
+		sourceLineageTag: user_id
+		summarizeBy: none
+		sourceColumn: user_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column session_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: f4954c80-beb0-4321-8c20-13a6aac67f87
+		sourceLineageTag: session_id
+		summarizeBy: none
+		sourceColumn: session_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column date
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: date
+		lineageTag: 67141091-a11a-4b02-8a60-80e6fa5adbbe
+		sourceLineageTag: date
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+	column sess_duration
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 29459382-b486-4999-96a9-240d6b3aece5
+		sourceLineageTag: sess_duration
+		summarizeBy: sum
+		sourceColumn: sess_duration
+
+		annotation SummarizationSetBy = Automatic
+
+	partition session_duration_date = entity
+		mode: directLake
+		source
+			entityName: session_duration_date
+			schemaName: dbo
+			expressionSource: DatabaseQuery
+
+	annotation PBI_ResultType = Table
+

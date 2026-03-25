@@ -1,0 +1,76 @@
+table UserAsks
+	lineageTag: 454d82f8-4474-491c-8b6f-07cde2e0ab4b
+	sourceLineageTag: [dbo].[UserAsks]
+
+	column user_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 3194b217-fb2d-41f8-8027-7c9d60ed4e91
+		sourceLineageTag: user_id
+		summarizeBy: none
+		sourceColumn: user_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column trace_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 139de2df-d701-4ecd-913e-4c74ec1dca5a
+		sourceLineageTag: trace_id
+		summarizeBy: none
+		sourceColumn: trace_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column content
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 41ce1d5a-b25e-4c8b-a469-de15c87341b1
+		sourceLineageTag: content
+		summarizeBy: none
+		sourceColumn: content
+
+		annotation SummarizationSetBy = Automatic
+
+	column session_id
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 75034823-429d-43ef-81bc-2040115fcce8
+		sourceLineageTag: session_id
+		summarizeBy: none
+		sourceColumn: session_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column response_time_seconds
+		dataType: double
+		sourceProviderType: numeric(17, 6)
+		lineageTag: 9494e6cc-ef6b-44ee-9d66-078334efd58d
+		sourceLineageTag: response_time_seconds
+		summarizeBy: none
+		sourceColumn: response_time_seconds
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column date
+		dataType: dateTime
+		formatString: General Date
+		sourceProviderType: date
+		lineageTag: 3d2b325e-fb82-40bc-b719-9ce13b13aef4
+		sourceLineageTag: date
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+	partition UserAsks = entity
+		mode: directLake
+		source
+			entityName: UserAsks
+			schemaName: dbo
+			expressionSource: DatabaseQuery
+
+	annotation PBI_ResultType = Table
+

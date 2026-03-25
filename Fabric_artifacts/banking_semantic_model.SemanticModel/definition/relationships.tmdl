@@ -45,3 +45,17 @@ relationship 26aa0c09-5b6b-a1c8-e56d-52d4cf8d3e0a
 	fromColumn: longterm_memory.id
 	toColumn: chat_sessions.session_id
 
+relationship 739e8f9e-786c-d181-74b8-9f447b270cee
+	fromColumn: chat_history.trace_id
+	toColumn: ContentIssues.trace_id
+
+relationship 743ed9fa-5217-9853-2c00-f5f6d3df735d
+	fromColumn: chat_history.trace_id
+	toColumn: UserAsks.trace_id
+
+
+relationship 73fd0b4e-b609-5455-312c-7fbf50b379b5
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: session_duration_date.session_id
+	toColumn: chat_sessions.session_id
