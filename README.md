@@ -173,14 +173,14 @@ In a terminal window, fromt the root folder, run below:
 python .\scripts\setup_workspace.py
 ```
 
-It will ask you what Fabric capacity you want to use, and then creates a workpace with default name of "AgenticBankingApp". After it is done, wait a minute or 2, and then run below from the same terminal window:
+It will ask you what Fabric capacity you want to use, and then creates a workpace with default name of "AgenticBankingApp". After it is done, wait a minute or 2, and then run below from the same terminal window. **Note that you must replace workspace GUID** argument with your workspace ID. To find it, got to Fabric window, click on your workspace and look at the address bar, there is one long string of numbers and charaters, and that is the ID you need to copy and run this with (put id in "").
 
 ```bash
-python scripts/retry_views_and_report.py --workspace-id <workspace GUID>
+python scripts/retry_views_and_report.py --workspace-id "workspace GUID"
 ```
 This will finalize connecting the semantic model to the lakehouse and creates some views and reports.
 
-Finding your workspace ID is easy, just click on your workspace and look at the address bar, there is a long string of numbers and charaters, and that is the ID you need to copy and run this with.
+
 
 
 After above steps are done, below is what you should see in the lineage view of your workspace:
