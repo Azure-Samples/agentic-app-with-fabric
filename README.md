@@ -271,6 +271,8 @@ Open **two** terminal windows.
 
 **Terminal 1** - Start the Backend
 
+(You will always need to do [az login](#4-login-to-your-fabric-account) first before running the backend!)
+
 From backend folder, run below in terminal (**ensure you have your virtual environment activated for this!**  )
 
 ```bash
