@@ -1,6 +1,6 @@
 expression DatabaseQuery =
 		let
-		    database = Sql.Database("replace with connection SQL string of lakehouse analytics endpoint", "lakehouse analytics GUID")
+		    database = Sql.Database("xpkymsttihxelp6vuo2w5ywt2u-6lbxy4fgnyoe7ip6lsgigyua4q.datawarehouse.fabric.microsoft.com", "b57a48c5-270e-44bb-97f5-3dfdcec9c64d")
 		in
 		    database
 	lineageTag: 05108d8e-9cee-453e-8fff-c530ceb65941

@@ -10,9 +10,3 @@ CREATE TABLE [dbo].[DocsChunks_Embeddings] (
 
 GO
 
-CREATE UNIQUE NONCLUSTERED INDEX [idx_custom_id]
-    ON [dbo].[DocsChunks_Embeddings]([custom_id] ASC);
-
-
-GO
-

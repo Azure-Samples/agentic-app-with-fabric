@@ -1,13 +1,9 @@
 {
-  "version": "1.0",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json",
+  "version": "4.0",
   "datasetReference": {
-    "byConnection": {
-      "connectionString": null,
-      "pbiServiceModelId": null,
-      "pbiModelVirtualServerName": "sobe_wowvirtualserver",
-      "pbiModelDatabaseName": "c1a22701-9f6d-b640-4e9c-8d1ac4aeec57",
-      "name": "EntityDataSource",
-      "connectionType": "pbiServiceXmlaStyleLive"
+    "byPath": {
+      "path": "../banking_semantic_model.SemanticModel"
     }
   }
 }

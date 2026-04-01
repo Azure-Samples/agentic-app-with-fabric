@@ -53,9 +53,9 @@ relationship 743ed9fa-5217-9853-2c00-f5f6d3df735d
 	fromColumn: chat_history.trace_id
 	toColumn: UserAsks.trace_id
 
-
 relationship 73fd0b4e-b609-5455-312c-7fbf50b379b5
 	crossFilteringBehavior: bothDirections
 	fromCardinality: one
 	fromColumn: session_duration_date.session_id
 	toColumn: chat_sessions.session_id
+

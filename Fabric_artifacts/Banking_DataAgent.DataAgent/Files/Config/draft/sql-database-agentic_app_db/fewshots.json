@@ -1,0 +1,15 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/fewShots/1.0.0/schema.json",
+  "fewShots": [
+    {
+      "id": "352bbfc6-539c-4593-87bc-9461e11cd647",
+      "question": "[user_id: user_123] how many accounts does this user have?",
+      "query": "SELECT COUNT(*) as total_acc\r\n\r\nFROM [dbo].[accounts]\r\n\r\nWHERE accounts.user_id = 'user_123';"
+    },
+    {
+      "id": "5f491952-9360-427f-a729-81abf134c640",
+      "question": "[user_id: user_123] Show my transactions in the groceries category.",
+      "query": "SELECT t.id AS transaction_id, t.amount, t.type, t.category, t.status, t.created_at\r\n\r\nFROM dbo.transactions t\r\n\r\nINNER JOIN dbo.accounts a ON t.from_account_id = a.id OR t.to_account_id = a.id\r\n\r\nWHERE a.user_id = 'user_123'\r\n\r\nAND LOWER(t.category) = 'groceries'"
+    }
+  ]
+}
