@@ -375,64 +375,93 @@ def init_chat_db(database):
                 db.session.rollback()
                 return None
 
-        def add_multi_agent_trace(self, trace_id: str, serialized_messages: list[str], trace_duration: int, 
-                                 event_times: list = [], nodes_list: list = []):
-            """Add all messages in a multi-agent trace to the chat history"""
-            # trace_id = str(uuid.uuid4())
+        def add_multi_agent_trace(self, trace_id: str, serialized_messages: list[str], trace_duration: int,
+                                 event_times: list = [], nodes_list: list = [],
+                                 success_list: list = [], error_list: list = []):
+            """Add all messages in a multi-agent trace to the chat history.
+
+            success_list and error_list are parallel to nodes_list; they carry per-step
+            success/failure information so that agent-error transitions (e.g. fabric →
+            account_agent fallback) are stored accurately in agent_traces.
+            """
             print(f"New trace data being logged for trace_id --> {trace_id}")
-            
+
             id_list = []
             prev_agent = "system"
             skip_n = 0
             for i in range(len(serialized_messages)):
                 trace_step_msg = _to_json_primitive(serialized_messages[i])
                 agent_name = nodes_list[i]
-                step_duration = event_times[i]*1000 # convert to milliseconds
+                step_duration = event_times[i] * 1000  # convert to milliseconds
                 print("step_duration:", step_duration)
                 step_number = i + 1
-                """Log agent routing decisions"""
+
+                # Per-step success / error info (defaults to success when not provided)
+                step_success = success_list[i] if i < len(success_list) else True
+                step_error = error_list[i] if i < len(error_list) else None
+
+                # Log agent routing decision with error context when applicable
                 self._log_agent_routing(trace_id=trace_id, step_number=step_number,
-                                        from_agent = prev_agent, current_agent=agent_name,
-                                        execution_duration_ms=step_duration)
+                                        from_agent=prev_agent, current_agent=agent_name,
+                                        execution_duration_ms=step_duration,
+                                        success=step_success, error_message=step_error)
                 if(prev_agent=="system" and len(trace_step_msg)>2):  # for future traces in the same session, this escapes redundant history message logging
                     skip_n = len(trace_step_msg)-2 
 
                 trace_step_msg_cut = trace_step_msg[skip_n:]
+                tool_call_dict = {}   # reset per-step so stale state never leaks across steps
                 for msg in trace_step_msg_cut:
                     print("-----------------> Adding messages for trace_id:", trace_id)
-                    print(msg['__class__'])        
+                    print(msg['__class__'])
                     if msg['__class__'] == 'HumanMessage':
                         message_id = msg['id']
                         print("human message id:", message_id)
-                        if(message_id not in id_list):
+                        if message_id not in id_list:
                             print(f"Adding human message to chat history from agent: {agent_name}")
-                            self.add_human_message(message = msg, trace_id=trace_id, routing_step=0)
-                            id_list.append(message_id)                      
+                            self.add_human_message(message=msg, trace_id=trace_id, routing_step=0)
+                            id_list.append(message_id)
                     elif msg['__class__'] == 'AIMessage':
                         message_id = msg['id']
                         print("AI message id:", message_id)
                         if msg.get("response_metadata", {}).get("finish_reason") != "tool_calls":
-                            if(message_id not in id_list):
+                            if message_id not in id_list:
                                 print(f"Adding AI message to chat history from agent: {agent_name}")
-                                self.add_ai_message(message = msg, trace_id=trace_id, step_duration=step_duration, agent_name=agent_name, routing_step=step_number)
-                                id_list.append(message_id)    
+                                self.add_ai_message(message=msg, trace_id=trace_id, step_duration=step_duration, agent_name=agent_name, routing_step=step_number)
+                                id_list.append(message_id)
                         else:
-                            print(f"Adding tool call message to chat history from agent: {agent_name}")
-                            tool_call_dict = self.add_tool_call_message( message=msg, trace_id=trace_id, agent_name=agent_name, routing_step=step_number)
+                            # Tool-call AIMessage — guard with id_list to prevent duplicate
+                            # PK inserts when the same message appears in multiple steps
+                            # (e.g. fabric step messages re-appear in account_agent step).
+                            if message_id not in id_list:
+                                print(f"Adding tool call message to chat history from agent: {agent_name}")
+                                tool_call_dict = self.add_tool_call_message(message=msg, trace_id=trace_id, agent_name=agent_name, routing_step=step_number)
+                                id_list.append(message_id)
                     elif msg['__class__'] == "ToolMessage":
-                        print(f"Adding tool results message to chat history for agent: {agent_name}")
-                        tool_result_dict = self.add_tool_result_message( message=msg, trace_id=trace_id, agent_name=agent_name, routing_step=step_number)
-                        if 'tool_call_dict' in locals():
-                            tool_call_dict.update(tool_result_dict)
-                            self.log_tool_usage(tool_info=tool_call_dict, trace_id=trace_id, agent_name=agent_name)
-                    prev_agent = agent_name
+                        # ToolMessage — same duplicate guard using the message's own id.
+                        tool_msg_id = msg.get('id')
+                        if tool_msg_id and tool_msg_id in id_list:
+                            print(f"Skipping duplicate ToolMessage id={tool_msg_id}")
+                        else:
+                            print(f"Adding tool results message to chat history for agent: {agent_name}")
+                            tool_result_dict = self.add_tool_result_message(message=msg, trace_id=trace_id, agent_name=agent_name, routing_step=step_number)
+                            if tool_msg_id:
+                                id_list.append(tool_msg_id)
+                            if tool_call_dict:
+                                tool_call_dict.update(tool_result_dict)
+                                self.log_tool_usage(tool_info=tool_call_dict, trace_id=trace_id, agent_name=agent_name)
+                # Always advance prev_agent after the inner message loop, even when
+                # the step produced zero new messages (e.g. fabric_agent error path).
+                # Without this, prev_agent would stay "system" and the skip_n guard
+                # would fire incorrectly on the next step (account_agent fallback).
+                prev_agent = agent_name
                 self.update_session_stats(agent_name)
-            return "All multi-agent trace messages added..."           
+            return "All multi-agent trace messages added..."
 
-        def _log_agent_routing(self, trace_id: str, step_number:str, 
-                               from_agent :str, current_agent: str,
-                                execution_duration_ms: int):
-            """Log agent routing decisions"""
+        def _log_agent_routing(self, trace_id: str, step_number: str,
+                               from_agent: str, current_agent: str,
+                               execution_duration_ms: int,
+                               success: bool = True, error_message: str = None):
+            """Log agent routing decisions, including error/fallback transitions."""
             agent_trace = AgentTrace(
                 session_id=self.session_id,
                 trace_id=trace_id,
@@ -440,10 +469,12 @@ def init_chat_db(database):
                 step_order=step_number,
                 from_agent=from_agent,
                 current_agent=current_agent,
-                execution_duration_ms=execution_duration_ms
+                execution_duration_ms=execution_duration_ms,
+                success=success,
+                error_message=error_message
             )
             db.session.add(agent_trace)
-            db.session.commit()  
+            db.session.commit()
         def add_human_message(self, message: dict, trace_id: str, routing_step: int):
             """Add the human message to chat history"""
             entry_message = ChatHistory(
@@ -851,6 +882,20 @@ def initialize_tool_definitions():
                 "required": ["action"]
             },
             "cost_per_call_cents": 1
+        },
+        {
+            "name": "query_fabric_data_agent",
+            "description": "Query the Microsoft Fabric Data Agent for read-only information about user accounts, transactions, balances, and spending history",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "description": "Natural-language question about the user's banking data"
+                    }
+                },
+                "required": ["question"]
+            }
         }
 
     ]
@@ -890,6 +935,12 @@ def initialize_agent_definitions():
             "description": "Specialized in customer support",
             "llm_config": {"model": model_name},
             "prompt_template": "You are a Customer Support Agent for a banking system."
+        },
+        {
+            "name": "fabric_agent",
+            "description": "Specialized in read-only data queries via the Microsoft Fabric Data Agent endpoint",
+            "llm_config": {"model": model_name},
+            "prompt_template": "You are a read-only data analyst agent powered by Microsoft Fabric."
         }
     ]
     
@@ -908,20 +959,35 @@ def initialize_agent_definitions():
     print("Multi-agent definitions initialized")
 
 def prep_multi_agent_log_load(trace_events, session_id, user_id,
-                              trace_id, trace_duration: int=0):
+                              trace_id, trace_duration: int = 0):
     node_names = []
     serialized_events = []
     time_list = []
+    success_list = []
+    error_list = []
 
     for event in trace_events:
         node_name = list(event.keys())[0]
-        event_msg = event[node_name].get("messages")
-        event_time = event[node_name].get("time_taken", 0)
+        event_data = event[node_name]
+        # LangGraph stream_mode="updates" only includes fields that changed; when
+        # fabric_agent errors without adding new messages the "messages" key may be
+        # absent.  Fall back to an empty list so serialization never receives None.
+        event_msg = event_data.get("messages") or []
+        event_time = event_data.get("time_taken", 0)
         serial_events = _serialize_messages(event_msg)
         node_names.append(node_name)
         serialized_events.append(serial_events)
         time_list.append(event_time)
-            
+
+        # Capture fabric_agent error state so analytics can record the failed step
+        # and the subsequent fallback transition to account_agent.
+        if node_name == "fabric_agent":
+            fabric_error = event_data.get("fabric_agent_error", False)
+            success_list.append(not fabric_error)
+            error_list.append(event_data.get("fabric_error_message") if fabric_error else None)
+        else:
+            success_list.append(True)
+            error_list.append(None)
 
     analytics_data = {
         "trace_id": trace_id,
@@ -930,6 +996,8 @@ def prep_multi_agent_log_load(trace_events, session_id, user_id,
         "session_id": session_id,
         "user_id": user_id,
         "messages": serialized_events,
-        "trace_duration": trace_duration
+        "trace_duration": trace_duration,
+        "success_list": success_list,
+        "error_list": error_list,
     }
     return analytics_data

@@ -808,8 +808,10 @@ def chatbot():
             "user_id": user_id,
             "session_id": session_id,
             "final_result": "",
-            "time_taken":0,
-            "widget_instructions": widget_instructions
+            "time_taken": 0,
+            "widget_instructions": widget_instructions,
+            "fabric_agent_error": False,
+            "fabric_error_message": "",
         }
         print("state being passed: ", initial_state)
 
