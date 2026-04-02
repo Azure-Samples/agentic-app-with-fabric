@@ -1,42 +1,11 @@
 
 # 🏦  Agentic Banking App with Microsoft Fabric
 
-#### NOTE: The main branch was last updated on: 🟢2026-03-24🟢
+#### NOTE: Main branch was last updated on: 🟢2026-04-02🟢
 
-## 📑 Table of Contents
-  [💡 **Intro**](#intro)
+## Welcome!
 
-  [🔧 **Architecture and Tech Stack**](#-architecture-and-tech-stack)
-
-  [✨ **Features**](#-features)
-- [Agentic Banking Application](#banking-application)
-
-- [Analytics Service for Agentic Operational Data](#analytics-service-for-agentic-operational-data)
-
----
-
-[🚀 **How to Deploy and run the app!**](#-how-to-deploy-and-run-the-app)
-1. [Prerequisites](#-prerequisites)
-2. [Set up Resources and Deploy Microsoft Fabric Workloads](#set-up-resources-and-deploy-microsoft-fabric-workloads) 
-3. [Set up Environment Variables and Run the App!](#follow-below-steps-to-run-the-app-locally)
-
----
-[⚗️ **Explore Fabric Workloads!**](#️-explore-fabric-workloads)
-- **RTI:** [Testing Real-time Monitoring](#testing-real-time-monitoring)
-- **Power BI:** [Explore Agentic Analytics](#explore-agentic-analytics)
-- **Fabric Notebooks**: [Evaluate agent performance via Azure Evaluation Framework (Optional)](#evaluate-agent-performance-via-azure-evaluation-framework-optional)
-  
----
-
-[🧑‍💻 **Learn More & Contribute!**](#-learn-more-and-contribute)
-- [Explore how to create and Ingest Embeddings from PDF (optional)](#explore-how-to-create-and-ingest-embeddings-from-pdf-optional)
-- [Workshop Content](workshop)
-- [Give Feedback & Contribute!!](#contributing)
-
-
----
-
-## 💡Intro 
+If you want to learn about how to develop and operationalize agentic solutions efficiently (via Microsoft Fabric) you are in the right place!!
 
 **Agentic Banking App** is an interactive web application designed to simulate a modern banking dashboard. Its primary purpose is to serve as an educational tool, demonstrating:
 - How SQL-based databases are leveraged across different types of workloads: **OLTP**, **OLAP**, **AI** workloads.
@@ -45,26 +14,33 @@
 
 Through a hands-on interface, users can see the practical difference between writing a new transaction to the database, running complex analytical queries on historical data, and using natural language to ask an agent to query the database for them.
 
-## 🔧 Architecture and Tech Stack 
+🚀
+[**Test the live app here!**](https://aka.ms/HostedAgenticAppFabric) 🚀
 
-![arch](assets/arch_v1.png)
+## 📑 Table of Contents
+  [-> ✨ **Features**](#-features)
 
+  [-> 🔧 **Architecture and Tech Stack**](#-architecture-and-tech-stack)
 
-
-| Layer    | Technology                            |
-| -------- | ------------------------------------- |
-| Frontend | React, Vite, TypeScript, Tailwind CSS |
-| Backend  | Python, Flask, LangChain, LangGraph   |
-| Database | Fabric SQL Database, Fabric Cosmos DB                   |
-| Eventstream | Fabric Eventhouse, KQL Database
-| AI       | Azure OpenAI API                      |
+[-> 🚀 **How to Deploy and run the app Locally!**](#-how-to-deploy-and-run-the-app)
+1. [Prerequisites](#-prerequisites)
+2. [Set up Resources and Deploy Microsoft Fabric Workloads](#set-up-resources-and-deploy-microsoft-fabric-workloads) 
+3. [Set up Environment Variables and Run the App!](#follow-below-steps-to-run-the-app-locally)
 
 ---
-
-🚀🚀🚀
-**Test the live app here** 🚀🚀🚀
-https://aka.ms/HostedAgenticAppFabric 
+[-> ⚗️ **Explore Fabric Workloads!**](#️-explore-fabric-workloads)
+- **RTI:** [Testing Real-time Monitoring](#testing-real-time-monitoring)
+- **Power BI:** [Explore Agentic Analytics](#explore-agentic-analytics)
+- **Fabric Notebooks**: [Evaluate agent performance via Azure Evaluation Framework (Optional)](#evaluate-agent-performance-via-azure-evaluation-framework-optional)
+  
 ---
+
+[-> 🧑‍💻 **Learn More & Contribute!**](#-learn-more-and-contribute)
+- [Explore how to create and Ingest Embeddings from PDF (optional)](#explore-how-to-create-and-ingest-embeddings-from-pdf-optional)
+- [Workshop Content](workshop)
+- [Give Feedback & Contribute!!](#contributing)
+
+
 
 ## ✨ Features
 
@@ -82,7 +58,8 @@ https://aka.ms/HostedAgenticAppFabric
     1. **Coordinator agent**: this agent is responsible for assessing user request and passing it to the relevant specialized agent,
     2. **Support agent**: this agent is specialized in answering general customer service questions via RAG.
     3. **Account agent**: this agent is a banking operations specialist that can respond to common banking requests such as getting account balance/transactioon summary, creating a new account, making transactions from one account to another, etc.
-    4. **Visualization agent**: this agent is responsible for creating custom visualizations and simulations for the user.
+    4. **Data Agent**: We have provided the optional capability to pull in a Data agent deployed in Fabric workspace into the team of agents to enable out-of-the-box and secure chat-with-your data capability. The Data agent has read-only access to the user's account and transactions information. 
+    5. **Visualization agent**: this agent is responsible for creating custom visualizations and simulations for the user.
 - Scenarios to test:
     - Ask questions about your finances in plain English (e.g., "How much did I spend on groceries last month?"). An AI agent translates your question into a SQL query, executes it, and returns the answer.
     - Get customer support from using RAG over documents
@@ -96,7 +73,23 @@ https://aka.ms/HostedAgenticAppFabric
 #### App insights and analytics in Fabric
 
 - As the app is used, the agentic operational data is captured, modeled, and used to reflect valuable analytics and insights via Fabric features such as Power BI reports, data agent, notebooks, real-time dashboards, etc.
+
+## 🔧 Architecture and Tech Stack 
+
+![arch](assets/arch_v1.png)
+
+
+
+| Layer    | Technology                            |
+| -------- | ------------------------------------- |
+| Frontend | React, Vite, TypeScript, Tailwind CSS |
+| Backend  | Python, Flask, LangChain, LangGraph   |
+| Database | Fabric SQL Database, Fabric Cosmos DB                   |
+| Eventstream | Fabric Eventhouse, KQL Database
+| AI       | Azure OpenAI API                      |
+
 ---
+
 ## 🚀 How to Deploy and Run the App!
 
 ### Prerequisites
@@ -374,8 +367,8 @@ As you use the app:
 
 As part of Fabric artifacts, we have included a notebook (QA_Evaluation_Notebook) that computes four scores (intent resolution, relevance, coherence and fluency) reflecting the agent's performance when answsering user requests. These scores are calculated based on Question/Answer pairs using [Azure AI Evaluation](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/agent-evaluate-sdk)
 You can set up this notebook in your Fabric workspace and run by following below steps:
-1. Open the notebook item, on the left side, under **Explorer -> Data items** click on **"+ Add data items" -> "Existing Data Sources"** and choose the agentic_lake. Now your notebook is connected to the correct data source
-2. Last step is to provide environment variables required to connect to your **llm model** of choice to be used as the judge. Create a .env file as below and upload it to the **Files** (located under the Tables) in your notebook page:
+
+1. Provide environment variables required to connect to your **llm model** of choice to be used as the judge. Create a .env file as below and upload it to the **Files** (located under the Tables) in your notebook page:
 
     ``` 
     AZURE_OPENAI_KEY="your key"
@@ -383,7 +376,7 @@ You can set up this notebook in your Fabric workspace and run by following below
     AZURE_OPENAI_DEPLOYMENT="model name"
     AZURE_OPENAI_API_VERSION="api version"
     ```
-3. Now you can run the cells in the notebook in order. After all is run successfully there should be a new table created in the "agentic_lake" called **answerqualityscores_withcontext** which has all the scores.
+2. Now you can run the cells in the notebook in order. After all is run successfully there should be a new table created in the "agentic_lake" called **answerqualityscores_withcontext** which has all the scores.
 
 
 ## 🧑‍💻 Learn More and Contribute!
