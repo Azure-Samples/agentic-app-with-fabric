@@ -191,11 +191,11 @@ Rename the sample file: In the backend directory, find the file named **.env.sam
 
 Edit the variables: Open the new .env file and fill in the values for the following variables:
 
-**Microsoft Fabric SQL Database**
+###### **Microsoft Fabric SQL Database**
 
 **FABRIC_SQL_CONNECTION_URL_AGENTIC**: This is the connection string for the SQL Database that contains both **the agentic application's operational data** (e.g., chat history) and **the sample customer banking data**. You can find this in your Fabric workspace by navigating to the SQL-endpoint of this database, clicking the "settings" -> "Connection strings" -> go to "ODBC" tab and select and copy SQL connection string. 
 
-**IMPORTANT: REMOVE ActiveDirectoryInteractive and REPLACE with: ActiveDirectoryCli**
+-> IMPORTANT: REMOVE ActiveDirectoryInteractive and REPLACE with: ActiveDirectoryCli
 
 ```dotenv
 # Before (the copied value)
@@ -206,14 +206,14 @@ FABRIC_SQL_CONNECTION_URL_AGENTIC = "Driver={ODBC Driver 18 for SQL Server};Serv
 ```
 ---
 
-**Microsoft Fabric Cosmos DB**
+###### **Microsoft Fabric Cosmos DB**
 
 **COSMOS_DB_ENDPOINT**: This is the Fabric Cosmos DB endpoint for the app. You can find this in your Fabric workspace by navigating to the Cosmos DB artifact in your workspace, clicking the "settings" -> "Connection" tab and copy the endpoint string.
 
 This Cosmos DB database has two containers: 1- **gen_ui_config** which is used for storing and retrieving configs of generated UI components (charts, simulations, etc.) for each user; and 2- **longterm_memory** container which is used for storing and retrieving conversation history per session for each user.
 
 
-**Microsoft Fabric Eventhub Connection**
+##### **Microsoft Fabric Eventhub Connection**
 
 There are two variables in .env file that you need to populate to successfully send real-time app usage logs to your Fabric EventHub: **FABRIC_EVENT_HUB_CONNECTION_STRING** and **FABRIC_EVENT_HUB_NAME**
 
@@ -230,6 +230,15 @@ Click on "CustomEndpoint" block, then click on "SAS Key Authentication" tab as s
 Lastly, copy the value shown for "Event hub name" and paste it in the .env file as the **FABRIC_EVENT_HUB_NAME** value. Then, first click on the eye button near "Connection string-primary key", then copy the value. Paste this as the value for **FABRIC_EVENT_HUB_CONNECTION_STRING** in your .env file.
 
 ![customendpoint](assets/3_blurred.png)
+
+##### **Microsoft Fabric Data Agent**
+
+If you would like to take advantage of Fabric's Data Agent, there are two simple steps:
+
+1. In the .env file, set **USE_FABRIC_DATA_AGENT** to "true" (default is false)
+2. Open the Banking_DataAgent from your workspace, click on Settings, then click on "Model Context Protocol" tab. Value shown under *MCP srver tool* tab is what you need to copy for **FABRIC_DATA_AGENT_TOOL_NAME** in .env, and value under *MCP server url* is what you should grab  for the **FABRIC_DATA_AGENT_SERVER_URL** in your .env file! 
+
+All good now to use the Fabric Data Agent as an expert agent in your app!  
 
 **Azure OpenAI Services**
 
