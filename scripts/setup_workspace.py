@@ -577,16 +577,15 @@ class WorkspaceSetup:
     #  4  Cosmos DB (deploy)
     #  5  Lakehouse (deploy + shortcuts)
     #  6  Wait for Lakehouse SQL Analytics Endpoint
-    #  7  Create SQL Views on Lakehouse Analytics Endpoint
-    #  8  Patch + Deploy Semantic Model
-    #  9  Deploy Report & DataAgent
-    # 10  Deploy Eventhouse, KQL, Eventstream & Dashboards
-    # 11  Deploy Notebook
-    # 12  Retrieve Connection Details
-    # 13  Populate backend/.env
-    # 14  Activate Eventstream
-    # 15  Summary
-    TOTAL_STEPS = 15
+    #  7  Patch + Deploy Semantic Model
+    #  8  Deploy Report & DataAgent
+    #  9  Deploy Eventhouse, KQL, Eventstream & Dashboards
+    # 10  Deploy Notebook
+    # 11  Retrieve Connection Details
+    # 12  Populate backend/.env
+    # 13  Activate Eventstream
+    # 14  Summary
+    TOTAL_STEPS = 14
 
     def __init__(
         self,
@@ -645,9 +644,12 @@ class WorkspaceSetup:
         can find the newly deployed item IDs.
         """
         self.deployed_ids.update(deployer.logical_to_actual)
-        # Also absorb any IDs that were previously persisted to disk
+        # Also absorb any IDs that were previously persisted to disk.
+        # Skip non-dict entries (e.g. top-level metadata like "workspace_id").
         state = load_state()
         for entry in state.values():
+            if not isinstance(entry, dict):
+                continue
             lid = entry.get("logicalId", "")
             aid = entry.get("itemId", "")
             if lid and aid and lid not in self.deployed_ids:
@@ -817,7 +819,7 @@ class WorkspaceSetup:
         self, workspace_id: str, sql_server: str, lakehouse_guid: str,
         deployer,
     ) -> None:
-        self._step(8, "Patch & Deploy Semantic Model")
+        self._step(7, "Patch & Deploy Semantic Model")
 
         if not sql_server or not lakehouse_guid:
             warn("Missing SQL server or lakehouse GUID — skipping semantic model patch.")
@@ -854,12 +856,10 @@ class WorkspaceSetup:
 
         if not sql_server:
             warn("No SQL analytics server available — skipping views setup.")
-            self.warnings.append("SQL views NOT created. Run setup_sql_views.py manually.")
             return
 
         if not HAS_PYODBC:
             warn("pyodbc not installed — skipping SQL views. Install with: pip install pyodbc")
-            self.warnings.append("SQL views NOT created. Run setup_sql_views.py manually.")
             return
 
         if self.dry_run:
@@ -868,10 +868,6 @@ class WorkspaceSetup:
 
         if not VIEWS_SQL.exists():
             warn(f"Views SQL file not found: {VIEWS_SQL}")
-            self.warnings.append(
-                f"SQL views NOT created ({VIEWS_SQL} missing). "
-                "Run setup_sql_views.py manually once the file is present."
-            )
             return
 
         # ── Authentication: same token-injection approach as step_create_sql_tables
@@ -908,10 +904,6 @@ class WorkspaceSetup:
             ok("Token acquired.")
         except Exception as exc:
             err(f"Could not acquire Azure AD token: {exc}")
-            self.warnings.append(
-                "SQL views NOT created — token unavailable. "
-                "Run: python scripts/setup_sql_views.py manually."
-            )
             return
 
         # Retry loop — Lakehouse SQL endpoint can take a moment after shortcut
@@ -931,11 +923,6 @@ class WorkspaceSetup:
                     time.sleep(30)
                 else:
                     err(f"Failed to connect after 5 attempts: {exc}")
-                    self.warnings.append(
-                        "SQL views NOT created (connection failed). "
-                        "Run: python scripts/setup_sql_views.py manually once the "
-                        "Lakehouse SQL endpoint is accessible."
-                    )
                     return
 
         # ── Execute views SQL ──────────────────────────────────────────────────
@@ -985,10 +972,6 @@ class WorkspaceSetup:
             ok(f"SQL views setup complete: {created} created, {skipped} skipped.")
         else:
             warn(f"SQL views completed with errors: {created} created, {skipped} skipped, {failed} FAILED.")
-            self.warnings.append(
-                f"Some SQL views failed to create ({failed} error(s)). "
-                "Run: python scripts/setup_sql_views.py manually to retry."
-            )
 
     # ── Step 7: Create SQL Database tables ────────────────────────────────────
 
@@ -1138,7 +1121,7 @@ class WorkspaceSetup:
     # ── Step 7: Get all connection details ─────────────────────────────────────
 
     def step_get_connections(self, workspace_id: str) -> dict[str, str]:
-        self._step(12, "Retrieve Connection Details")
+        self._step(11, "Retrieve Connection Details")
         details: dict[str, str] = {}
 
         # ── SQL Database (agentic_app_db) ──────────────────────────────────────
@@ -1232,7 +1215,7 @@ class WorkspaceSetup:
     # ── Step 8: Write .env ─────────────────────────────────────────────────────
 
     def step_write_env(self, connection_details: dict[str, str]) -> None:
-        self._step(13, "Populate backend/.env")
+        self._step(12, "Populate backend/.env")
         if not connection_details:
             warn("No connection details to write.")
             return
@@ -1241,7 +1224,7 @@ class WorkspaceSetup:
     # ── Step 9: Activate Eventstream ──────────────────────────────────────────
 
     def step_activate_eventstream(self, workspace_id: str) -> None:
-        self._step(14, "Activate Eventstream Pipeline")
+        self._step(13, "Activate Eventstream Pipeline")
 
         stream_logical = "b43b90ba-f1e3-843b-4a09-80ea104eee0d"
         stream_id = self.deployed_ids.get(stream_logical)
@@ -1266,7 +1249,7 @@ class WorkspaceSetup:
     # ── Step 10: Final summary ─────────────────────────────────────────────────
 
     def step_summary(self, workspace_id: str) -> None:
-        self._step(15, "Setup Complete")
+        self._step(14, "Setup Complete")
 
         print(f"\n{'─'*70}")
         print(f"{B}{'✅ Fabric Workspace Ready':^70}{X}")
@@ -1274,14 +1257,30 @@ class WorkspaceSetup:
 
         print(f"  Workspace ID : {G}{workspace_id}{X}")
         print(f"  Workspace URL: {C}https://app.fabric.microsoft.com/groups/{workspace_id}{X}")
-        print(f"  Artifacts    : {len(self.deployed_ids)} item(s) deployed")
         print(f"  .env         : {self.env_path.resolve()}\n")
 
-        if self.warnings:
-            print(f"{Y}⚠  Manual steps remaining:{X}")
-            for i, w in enumerate(self.warnings, 1):
-                print(f"  {Y}{i}.{X} {w}")
+        # ── Deployed items report ──────────────────────────────────────────────
+        state = load_state()
+        deployed_entries = [
+            (name, meta)
+            for name, meta in state.items()
+            if isinstance(meta, dict) and meta.get("itemId")
+        ]
+        if deployed_entries:
+            deployed_entries.sort(key=lambda x: (x[1].get("type", ""), x[0]))
+            print(f"{B}Deployed items ({len(deployed_entries)}):{X}")
+            for name, meta in deployed_entries:
+                item_type = meta.get("type", "?")
+                item_id   = meta.get("itemId", "?")
+                print(f"  {G}✓{X}  {item_type:<22} {name}  {Y}({item_id[:8]}…){X}")
             print()
+
+        print(f"{Y}⚠  Steps remaining:{X}")
+        print(f"  {Y}1.{X} Run:  {C}python scripts/retry_views_and_report.py{X}  to finalize the deployment")
+        print(f"     (creates SQL views, deploys the Semantic Model and Power BI Report)")
+        for i, w in enumerate(self.warnings, 2):
+            print(f"  {Y}{i}.{X} {w}")
+        print()
 
         print(f"{B}Next steps:{X}")
         print(f"  1. Review backend/.env and fill in any missing values shown above")
@@ -1299,6 +1298,12 @@ class WorkspaceSetup:
         try:
             # ── Step 1: Workspace ──────────────────────────────────────────────
             ws_id = self.step_workspace()
+
+            # Persist workspace_id to deploy-state.json so retry_views_and_report.py
+            # can auto-discover it without requiring a --workspace-id argument.
+            _state = load_state()
+            _state["workspace_id"] = ws_id
+            save_state(_state)
 
             # Single deployer instance — persists logical→actual ID state across
             # all deploy_phase() calls so each phase can substitute IDs from
@@ -1338,50 +1343,45 @@ class WorkspaceSetup:
             # Lakehouse creation.  We poll until it is ready (up to 5 min).
             sql_server, lakehouse_guid = self.step_wait_for_lakehouse_sql(ws_id)
 
-            # ── Step 7: SQL Views ──────────────────────────────────────────────
-            # Views reference the SQL DB tables that are now visible in the
-            # Lakehouse SQL analytics endpoint via the shortcuts created in step 5.
-            self.step_sql_views(ws_id, sql_server, lakehouse_guid)
-
-            # ── Step 8: Semantic Model ─────────────────────────────────────────
+            # ── Step 7: Semantic Model ─────────────────────────────────────────
             # Patch expressions.tmdl with the real SQL analytics server + GUID,
             # then deploy (or re-deploy) the SemanticModel via deploy_phase so
             # that ID substitution and async polling are handled correctly.
             # On a first run this CREATES the item; on a re-run it UPDATES it.
             self.step_patch_semantic_model(ws_id, sql_server, lakehouse_guid, deployer)
             # Pick up the newly deployed / updated SemanticModel ID so the
-            # Report (step 9) can substitute it into definition.pbir.
+            # Report (step 8) can substitute it into definition.pbir.
             self._sync_ids(deployer)
 
-            # ── Step 9: Report & DataAgent ─────────────────────────────────────
+            # ── Step 8: Report & DataAgent ─────────────────────────────────────
             # Both reference the SemanticModel GUID which is now in deployed_ids.
-            self._step(9, "Deploy Report & DataAgent")
+            self._step(8, "Deploy Report & DataAgent")
             deployer.deploy_phase(["Report", "DataAgent"])
             self._sync_ids(deployer)
 
-            # ── Step 10: Eventhouse, KQL, Eventstream, Dashboards ─────────────
+            # ── Step 9: Eventhouse, KQL, Eventstream, Dashboards ──────────────
             # Deploy in strict dependency order:
             #   Eventhouse → KQLDatabase (child) → Eventstream → Dashboards
-            self._step(10, "Deploy Eventhouse, KQL, Eventstream & Dashboards")
+            self._step(9, "Deploy Eventhouse, KQL, Eventstream & Dashboards")
             deployer.deploy_phase(["Eventhouse"])
             deployer.deploy_phase(["KQLDatabase"])
             deployer.deploy_phase(["Eventstream"])
             deployer.deploy_phase(["KQLDashboard", "KQLQueryset"])
             self._sync_ids(deployer)
 
-            # ── Step 11: Notebook ──────────────────────────────────────────────
-            self._step(11, "Deploy Notebook")
+            # ── Step 10: Notebook ──────────────────────────────────────────────
+            self._step(10, "Deploy Notebook")
             deployer.deploy_phase(["Notebook"])
             self._sync_ids(deployer)
 
-            # ── Step 12 + 13: Connection details → .env ───────────────────────
+            # ── Step 11 + 12: Connection details → .env ───────────────────────
             conn = self.step_get_connections(ws_id)
             self.step_write_env(conn)
 
-            # ── Step 14: Activate Eventstream ─────────────────────────────────
+            # ── Step 13: Activate Eventstream ─────────────────────────────────
             self.step_activate_eventstream(ws_id)
 
-            # ── Step 15: Summary ───────────────────────────────────────────────
+            # ── Step 14: Summary ───────────────────────────────────────────────
             self.step_summary(ws_id)
 
             return 0

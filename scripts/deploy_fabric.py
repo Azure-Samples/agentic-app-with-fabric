@@ -688,7 +688,10 @@ class DirectDeployer:
             return
         self._all_artifacts = scan_artifacts(self.artifacts_dir)
         info(f"Found {len(self._all_artifacts)} artifact(s) in {self.artifacts_dir}")
+        # Skip non-dict entries (e.g. top-level metadata like "workspace_id").
         for entry in self.state.values():
+            if not isinstance(entry, dict):
+                continue
             lid = entry.get("logicalId", "")
             aid = entry.get("itemId", "")
             if lid and _is_guid(aid):

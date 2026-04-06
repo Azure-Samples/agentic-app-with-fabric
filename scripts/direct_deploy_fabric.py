@@ -701,7 +701,10 @@ class DirectDeployer:
 
         # Pre-seed logical_to_actual from saved state (supports reruns).
         # Only accept real GUIDs — skip "unknown-…" placeholders from failed runs.
+        # Skip non-dict entries (e.g. top-level metadata like "workspace_id").
         for entry in self.state.values():
+            if not isinstance(entry, dict):
+                continue
             lid = entry.get("logicalId", "")
             aid = entry.get("itemId", "")
             if lid and _is_guid(aid):
