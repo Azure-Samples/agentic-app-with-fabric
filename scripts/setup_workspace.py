@@ -268,6 +268,12 @@ class FabricAPI:
         except Exception:
             return self.get(f"/workspaces/{ws_id}/items/{cosmos_id}")
 
+    def get_data_agent(self, ws_id: str, agent_id: str) -> dict:
+        try:
+            return self.get(f"/workspaces/{ws_id}/dataAgents/{agent_id}")
+        except Exception:
+            return self.get(f"/workspaces/{ws_id}/items/{agent_id}")
+
     def get_eventstream(self, ws_id: str, stream_id: str) -> dict:
         try:
             return self.get(f"/workspaces/{ws_id}/eventstreams/{stream_id}")
@@ -351,13 +357,67 @@ def _extract_lakehouse_sql_endpoint(item: dict) -> tuple[Optional[str], Optional
 
 def _extract_cosmos_endpoint(item: dict) -> Optional[str]:
     props = item.get("properties", {})
-    # Try common field names
-    for key in ("endpoint", "cosmosEndpoint", "accountEndpoint", "connectionString"):
+    # Try common top-level field names (Fabric-native CosmosDB and mirrored variants)
+    for key in (
+        "endpoint", "cosmosEndpoint", "accountEndpoint",
+        "documentEndpoint", "serviceEndpoint", "databaseEndpoint",
+        "connectionString",
+    ):
         val = props.get(key)
-        if val and ("cosmos" in val.lower() or "documents.azure.com" in val.lower()
-                    or "fabric.microsoft.com" in val.lower()):
+        if val and (
+            "cosmos" in val.lower()
+            or "documents.azure.com" in val.lower()
+            or "fabric.microsoft.com" in val.lower()
+        ):
             return val
+    # Try nested connectionInfo block
+    for nested_key in ("connectionInfo", "connectionDetails", "sourceProperties"):
+        nested = props.get(nested_key, {})
+        if isinstance(nested, dict):
+            for key in ("endpoint", "accountEndpoint", "connectionString"):
+                val = nested.get(key)
+                if val:
+                    return val
     return None
+
+
+def _extract_data_agent_details(
+    item: dict, ws_id: str, agent_id: str
+) -> tuple[str, str]:
+    """
+    Return (server_url, tool_name) for a deployed DataAgent item.
+
+    server_url  — the MCP /run endpoint used by FABRIC_DATA_AGENT_SERVER_URL.
+                  Constructed from the standard Fabric API pattern; the API
+                  response is also checked first in case Fabric exposes it
+                  directly via a properties field.
+    tool_name   — the MCP tool name used by FABRIC_DATA_AGENT_TOOL_NAME.
+                  Read from the response's displayName if a dedicated field
+                  is not present (this matches what the Fabric portal shows
+                  under the "Model Context Protocol" tab).
+    """
+    props = item.get("properties", {})
+
+    # Some Fabric API versions surface the URL directly
+    server_url = (
+        props.get("serverUrl")
+        or props.get("mcpServerUrl")
+        or props.get("endpointUrl")
+    )
+    if not server_url:
+        server_url = (
+            f"https://api.fabric.microsoft.com/v1"
+            f"/workspaces/{ws_id}/dataAgents/{agent_id}/run"
+        )
+
+    tool_name = (
+        props.get("toolName")
+        or props.get("mcpToolName")
+        or item.get("displayName", "")
+        or "Banking_DataAgent"
+    )
+
+    return server_url, tool_name
 
 
 def _extract_eventstream_details(item: dict) -> tuple[Optional[str], Optional[str]]:
@@ -1176,6 +1236,37 @@ class WorkspaceSetup:
                 )
         elif self.dry_run:
             details["COSMOS_DB_ENDPOINT"] = "dry-run-value"
+
+        # ── DataAgent (MCP server URL + tool name) ────────────────────────────
+        agent_logical = "3be97f14-70a3-80eb-48bb-96c6e3600c29"
+        agent_id = self.deployed_ids.get(agent_logical)
+        if agent_id and not self.dry_run:
+            info(f"Getting DataAgent details ({agent_id[:8]}…)…")
+            try:
+                agent_item = self.api.get_data_agent(workspace_id, agent_id)
+                server_url, tool_name = _extract_data_agent_details(
+                    agent_item, workspace_id, agent_id
+                )
+                details["FABRIC_DATA_AGENT_SERVER_URL"] = server_url
+                details["FABRIC_DATA_AGENT_TOOL_NAME"]  = tool_name
+                details["USE_FABRIC_DATA_AGENT"]        = "true"
+                ok(f"DataAgent server URL: {server_url}")
+                ok(f"DataAgent tool name : {tool_name}")
+            except Exception as e:
+                warn(f"DataAgent API call failed: {e}")
+                # Still construct the URL from known IDs
+                server_url = (
+                    f"https://api.fabric.microsoft.com/v1"
+                    f"/workspaces/{workspace_id}/dataAgents/{agent_id}/run"
+                )
+                details["FABRIC_DATA_AGENT_SERVER_URL"] = server_url
+                details["FABRIC_DATA_AGENT_TOOL_NAME"]  = "Banking_DataAgent"
+                details["USE_FABRIC_DATA_AGENT"]        = "true"
+                ok(f"DataAgent server URL (constructed): {server_url}")
+        elif self.dry_run:
+            details["FABRIC_DATA_AGENT_SERVER_URL"] = "dry-run-value"
+            details["FABRIC_DATA_AGENT_TOOL_NAME"]  = "dry-run-tool"
+            details["USE_FABRIC_DATA_AGENT"]        = "true"
 
         # ── Eventstream (EventHub) ─────────────────────────────────────────────
         stream_logical = "b43b90ba-f1e3-843b-4a09-80ea104eee0d"
