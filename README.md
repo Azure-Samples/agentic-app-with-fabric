@@ -47,6 +47,11 @@ Before you begin, install the following:
 
 ---
 
+### Quick Setup Video
+
+[![Watch the Setup Demo](./assets/video_play.png)](https://youtu.be/svxQccXyreM)
+---
+
 ### Step 1 — Clone the Repo
 
 ```bash
@@ -60,12 +65,12 @@ cd agentic-app-with-fabric
 
 ```bash
 # Create and activate a virtual environment
+# Windows: 
 python -m venv venv
-
-# Windows
 .\venv\Scripts\activate
 
-# macOS / Linux
+# macOS / Linux: 
+python3 -m venv venv
 source venv/bin/activate
 
 # Install packages
@@ -100,13 +105,13 @@ This single command creates the workspace, deploys all Fabric artifacts, creates
 
 ```bash
 # Windows:
-python scripts/setup_workspace.py
+python scripts/setup_workspace.py --workspace-name "AgenticBankingApp-{yourinistials}"
 
 # Mac:
-python3 scripts/setup_workspace.py
+python3 scripts/setup_workspace.py --workspace-name "AgenticBankingApp-{yourinistials}"
 ```
 
-The script will prompt you to select a Fabric capacity, then create a workspace named **AgenticBankingApp**.
+The script will prompt you to select a Fabric capacity, then create a workspace named **AgenticBankingApp-{yourinistials}**, or any other name to make the workspace name unique. 
 
 **What gets deployed:**
 
@@ -181,7 +186,7 @@ Copy the two values into `.env`:
 
 ```dotenv
 FABRIC_EVENT_HUB_NAME="<Event hub name>"
-FABRIC_EVENT_HUB_CONNECTION_STRING="<Connection string-primary key>"
+FABRIC_EVENT_HUB_PRIMARY_KEY="<Connection string-primary key>"
 NOTE: first click on the eye button near "Connection string-primary key" to reveal the value, then copy the value
 ```
 
@@ -227,11 +232,7 @@ npm run dev
 
 Opens the app at → [http://localhost:5173](http://localhost:5173)
 
----
 
-### Demo Video
-
-[![Watch the Setup Demo](./assets/Link_Video.png)](https://www.youtube.com/watch?v=F4IMijKm990)
 
 ---
 
