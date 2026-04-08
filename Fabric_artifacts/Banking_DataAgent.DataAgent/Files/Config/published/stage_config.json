@@ -1,4 +1,4 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/dataAgent/definition/stageConfiguration/1.0.0/schema.json",
-  "aiInstructions": "- user table has basic user information.\n\n- account table has info on all accounts each user has\n\n- transactions table has all transactions going from source account to destination account. Source account id is populated in \"from_account_id\" and destination account id is \"to_account_id\".\n\n- account table can be joined with users table using user_id column as the common key (equivalant to id column in users table).\n\n- transactions table cannot be directly joined to users table. you must first join transactions table with accounts table using from_account_id or to_account_id which are equivalant to the id column in accounts tablel; then you can join the the results with user_id."
+  "aiInstructions": ""
 }
