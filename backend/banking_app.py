@@ -829,7 +829,7 @@ def chatbot():
 
         ##################### Initialize Event Hub Producer Client for analytics streaming #####################
         from azure.eventhub import EventHubProducerClient, EventData
-        eventHubConnString = os.getenv("FABRIC_EVENT_HUB_CONNECTION_STRING")
+        eventHubConnString = os.getenv("FABRIC_EVENT_HUB_PRIMARY_KEY")
         eventHubName = os.getenv("FABRIC_EVENT_HUB_NAME")
         stream_flag = False
         try:
