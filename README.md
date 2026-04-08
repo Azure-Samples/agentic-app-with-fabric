@@ -1,6 +1,6 @@
 # 🏦 Agentic Banking App with Microsoft Fabric
 
-> Last updated: 🟢 2026-04-07 🟢
+> Last updated: 🟢 2026-04-08 🟢
 
 An interactive banking demo that shows how databases power **OLTP**, **OLAP**, and **AI workloads** side-by-side, all wired together through Microsoft Fabric.
 
@@ -22,7 +22,7 @@ An interactive banking demo that shows how databases power **OLTP**, **OLAP**, a
 
 - **Transactions (OLTP)** — real-time writes and reads against a Fabric SQL Database
 - **Analytics (OLAP)** — an analytics dashboard with charts and summaries of spending habits. This represents an OLAP workload, running complex, aggregate queries over a large dataset.
-- **AI Agents** — multi-agent LangGraph system with a coordinator, support, account, Fabric Data Agent, and visualization agent
+- **AI Agents** — multi-agent LangGraph system with a coordinator, support, account, Fabric Data Agent (optional), and visualization agent
 - **Generative UI** — agents create personalized interactive visualizations on the fly
 - **Real-time Monitoring** — app usage and content safety data streamed to Fabric Eventhouse via Eventstream
 
