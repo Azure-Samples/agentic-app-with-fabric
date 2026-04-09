@@ -103,7 +103,7 @@ Open **Agentic_Insights** in your workspace to explore agent performance, usage 
 
 ## 🤖 Fabric Data Agent
 
-The **Banking_DataAgent** gives the app a read-only, natural-language interface to the banking data warehouse. It is deployed and wired up automatically, but you can also explore it directly in the Fabric portal.
+The **Banking_DataAgent** gives the app a read-only, natural-language interface to the banking data warehouse. It is deployed and can be used via setting the environment variable **USE_FABRIC_DATA_AGENT** to "true".
 
 ### Verify the Data Agent is Connected
 
@@ -115,21 +115,8 @@ FABRIC_DATA_AGENT_SERVER_URL="https://api.fabric.microsoft.com/v1/workspaces/...
 FABRIC_DATA_AGENT_TOOL_NAME="Banking_DataAgent"
 ```
 
-### Explore the Agent in the Fabric Portal
-
-1. Open **Banking_DataAgent** in your workspace.
-2. Click **Settings** → **Model Context Protocol** tab.
-3. Here you can see the MCP Server URL and tool name, test queries, and view the agent's data sources and AI instructions.
-
-### Test It in the App
-
-Log in to the app and ask a data question:
-
-- *"How much did I spend last month?"*
-- *"What are my top 5 largest transactions?"*
-- *"What is my current balance across all accounts?"*
-
-The Fabric Data Agent handles these with read-only SQL access scoped to the logged-in user.
+### Set up Data Agent
+[Set up Data Agent as an expert database agent!](../workshop/Data_Agent/data_agent_configuration_reference.md)
 
 ---
 
