@@ -142,7 +142,7 @@ The **QA_Evaluation_Notebook** in your workspace computes four quality scores fo
    AZURE_OPENAI_API_VERSION="api version"
    ```
 
-2. Upload this `.env` file to the **Files** section of the notebook page in Fabric (found under Tables in the Lakehouse view).
+2. Upload this `.env` file to the **Files** section of the notebook page in Fabric (found under Built-in in the Resources tab).
 
 3. Open **QA_Evaluation_Notebook** in Fabric and run all cells in order.
 
