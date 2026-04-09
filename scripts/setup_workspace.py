@@ -1367,7 +1367,7 @@ class WorkspaceSetup:
             print()
 
         print(f"{Y}⚠  Steps remaining:{X}")
-        print(f"  {Y}1.{X} Run:  {C}python scripts/retry_views_and_report.py{X}  to finalize the deployment")
+        print(f"  {Y}1.{X} Run:  {C}python scripts/finalize_views_and_report.py{X}  to finalize the deployment")
         print(f"     (creates SQL views, deploys the Semantic Model and Power BI Report)")
         for i, w in enumerate(self.warnings, 2):
             print(f"  {Y}{i}.{X} {w}")
@@ -1390,7 +1390,7 @@ class WorkspaceSetup:
             # ── Step 1: Workspace ──────────────────────────────────────────────
             ws_id = self.step_workspace()
 
-            # Persist workspace_id to deploy-state.json so retry_views_and_report.py
+            # Persist workspace_id to deploy-state.json so finalize_views_and_report.py
             # can auto-discover it without requiring a --workspace-id argument.
             _state = load_state()
             _state["workspace_id"] = ws_id
