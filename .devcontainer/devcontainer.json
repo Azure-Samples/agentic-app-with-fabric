@@ -1,0 +1,47 @@
+{
+  "name": "Agentic App with Fabric",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  // Add Node.js 18 and Azure CLI via devcontainer Features
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    },
+    "ghcr.io/devcontainers/features/azure-cli:1": {
+      "version": "latest"
+    }
+  },
+  // Install Python and Node dependencies after the container is created
+  "postCreateCommand": "pip install -r requirements.txt && npm install",
+  // Copy .env.sample to .env if .env doesn't already exist
+  "postStartCommand": "[ -f backend/.env ] || cp backend/.env.sample backend/.env",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "ms-azuretools.vscode-azurefunctions",
+        "ms-vscode.azure-account"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        }
+      }
+    }
+  },
+  "remoteUser": "vscode"
+}
