@@ -61,7 +61,7 @@ print("Azure AI Evaluation SDK loaded successfully")
 
 # ## Step 2: Load Configuration from .env file in Built-in
 
-env_file_path = "/lakehouse/default/Files/.env"  # Adjust this path as needed
+env_file_path = "./builtin/.env"  # Adjust this path as needed
 
 print("Loading configuration from .env file...")
 try:
