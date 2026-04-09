@@ -121,6 +121,16 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
+
+class _InfoOnlyFilter(logging.Filter):
+    """Suppress WARNING and ERROR from live output; only INFO passes through."""
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno <= logging.INFO
+
+# Apply filter to all root handlers so warn()/err() are silent during the run
+for _h in logging.root.handlers:
+    _h.addFilter(_InfoOnlyFilter())
+
 STEP_WIDTH = 60
 
 def step(n: int, total: int, msg: str) -> None:
@@ -674,6 +684,7 @@ class WorkspaceSetup:
         self.deployed_ids: dict[str, str] = {}
         self.connection_details: dict[str, str] = {}
         self.warnings: list[str] = []
+        self.deployer: Optional[DirectDeployer] = None
 
     # ── Step helpers ──────────────────────────────────────────────────────────
 
@@ -1366,9 +1377,17 @@ class WorkspaceSetup:
                 print(f"  {G}✓{X}  {item_type:<22} {name}  {Y}({item_id[:8]}…){X}")
             print()
 
+        # ── Artifact errors ────────────────────────────────────────────────────
+        failed_artifacts = self.deployer.failed if self.deployer else []
+        if failed_artifacts:
+            print(f"{R}Artifacts that failed to create ({len(failed_artifacts)}):{X}")
+            for item in failed_artifacts:
+                print(f"  {R}✗{X}  {item}")
+            print()
+
         print(f"{Y}⚠  Steps remaining:{X}")
         print(f"  {Y}1.{X} Run:  {C}python scripts/finalize_views_and_report.py{X}  to finalize the deployment")
-        print(f"     (creates SQL views, deploys the Semantic Model and Power BI Report)")
+        print(f"     (creates SQL views, ensures Semantic Model is linked to lakehouse and deploys Power BI Report)")
         for i, w in enumerate(self.warnings, 2):
             print(f"  {Y}{i}.{X} {w}")
         print()
@@ -1399,7 +1418,7 @@ class WorkspaceSetup:
             # Single deployer instance — persists logical→actual ID state across
             # all deploy_phase() calls so each phase can substitute IDs from
             # previously deployed items.
-            deployer = self._make_deployer(ws_id)
+            self.deployer = deployer = self._make_deployer(ws_id)
 
             # ── Step 2: SQL Database ───────────────────────────────────────────
             # Deploy first so tables can be created immediately after.

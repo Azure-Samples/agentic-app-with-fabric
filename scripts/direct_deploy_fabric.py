@@ -261,7 +261,7 @@ class FabricClient:
             if state in ("FAILED", "CANCELLED"):
                 err(f"Operation {state}: {body.get('error', {})}")
                 raise RuntimeError(f"Async operation failed for {label}")
-            info(f"  {label}: {state} {pct}%")
+            info(f"  {label}: {state}")
             time.sleep(5)
         raise TimeoutError(f"Timed out waiting for operation: {label}")
 
