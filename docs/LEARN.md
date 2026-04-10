@@ -20,7 +20,7 @@ This guide explains how the app works under the hood and points to resources for
 
 ## 🏗️ Architecture Overview
 
-![Architecture Diagram](../assets/arch_v1.png)
+![Architecture Diagram](../assets/arch_withDA.png)
 
 ### Tech Stack
 
