@@ -1260,7 +1260,7 @@ class WorkspaceSetup:
                 )
                 details["FABRIC_DATA_AGENT_SERVER_URL"] = server_url
                 details["FABRIC_DATA_AGENT_TOOL_NAME"]  = tool_name
-                details["USE_FABRIC_DATA_AGENT"]        = "true"
+                details["USE_FABRIC_DATA_AGENT"]        = "false"
                 ok(f"DataAgent server URL: {server_url}")
                 ok(f"DataAgent tool name : {tool_name}")
             except Exception as e:
@@ -1272,12 +1272,12 @@ class WorkspaceSetup:
                 )
                 details["FABRIC_DATA_AGENT_SERVER_URL"] = server_url
                 details["FABRIC_DATA_AGENT_TOOL_NAME"]  = "Banking_DataAgent"
-                details["USE_FABRIC_DATA_AGENT"]        = "true"
+                details["USE_FABRIC_DATA_AGENT"]        = "false"
                 ok(f"DataAgent server URL (constructed): {server_url}")
         elif self.dry_run:
             details["FABRIC_DATA_AGENT_SERVER_URL"] = "dry-run-value"
             details["FABRIC_DATA_AGENT_TOOL_NAME"]  = "dry-run-tool"
-            details["USE_FABRIC_DATA_AGENT"]        = "true"
+            details["USE_FABRIC_DATA_AGENT"]        = "false"
 
         # ── Eventstream (EventHub) ─────────────────────────────────────────────
         stream_logical = "b43b90ba-f1e3-843b-4a09-80ea104eee0d"
