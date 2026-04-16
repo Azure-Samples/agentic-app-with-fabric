@@ -142,7 +142,7 @@ Send another test chat, then open the **app_events** KQL Database in your worksp
 
    You can click on edit and modify the name, type of visualization, etc.
 
-5. You can follow the same approach and add other queries to the same dashboard (or  a new one, if you desire.
+5. You can follow the same approach and add other queries to the same dashboard (or  a new one, if you desire.)
 
 
 > 💡 **Test tip:** To simulate sensitive content without triggering real OpenAI filters, type a filter category name (e.g. `violence`, `jailbreak`) directly into the chat.
