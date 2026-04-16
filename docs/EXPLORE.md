@@ -130,7 +130,7 @@ Send another test chat, then open the **app_events** KQL Database in your worksp
    ```
 2. If you click on any of them and Run, you can see the results.
 
-3. Now is the time to build your first real-time monitoring dashboard. Click on a query of your choice, then click on the "Save to Dashboard" drop down. Since this is a new dashboard, click on "**To a new Dashboard** option and choose a name you desire (ex. ContentMonitoring)
+3. Now is the time to build your first real-time monitoring dashboard. Click on a query of your choice, then click on the "Save to Dashboard" drop down. Since this is a new dashboard, click on **To a new Dashboard** option and choose a name you desire (ex. ContentMonitoring)
 
    ![dashboard initial](../assets/new_dash.png):
 
