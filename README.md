@@ -148,7 +148,7 @@ This finalizes the Lakehouse SQL views, patches the Semantic Model, and deploys 
 
 When done, your workspace lineage should look like this:
 
-![lineage](assets/full_lineage.png)
+![lineage](assets/final_lineage_april.png)
 
 ---
 
