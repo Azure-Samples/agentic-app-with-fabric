@@ -116,16 +116,19 @@ def get_vector_store():
     """Lazy initialization of vector store."""
     global vector_store, _vector_store_initialized
     if not _vector_store_initialized and embeddings_client:
-        vector_store = SQLServer_VectorStore(
-            connection_string=connection_url,
-            table_name="DocsChunks_Embeddings",
-            embedding_function=embeddings_client,
-            embedding_length=1536,
-            distance_strategy=DistanceStrategy.COSINE,
-        )
-        _vector_store_initialized = True
+        try:
+            vector_store = SQLServer_VectorStore(
+                connection_string=connection_url,
+                table_name="DocsChunks_Embeddings",
+                embedding_function=embeddings_client,
+                embedding_length=1536,
+                distance_strategy=DistanceStrategy.COSINE,
+            )
+            _vector_store_initialized = True
+        except Exception as error:
+            print(f"WARNING: Vector store initialization failed: {error}")
+            vector_store = None
     return vector_store
-vector_store = get_vector_store()
 
 ##############################################################################################################
 
@@ -453,7 +456,8 @@ def get_transactions_summary(user_id: str, time_period: str = 'this year', accou
 
 def search_support_documents(user_question: str) -> str:
     """Searches the knowledge base for answers to customer support questions using vector search."""
-    if not vector_store:
+    current_vector_store = get_vector_store()
+    if not current_vector_store:
         return "The vector store is not configured."
     try:
         # Basic transient retry for dropped connections
@@ -461,7 +465,7 @@ def search_support_documents(user_question: str) -> str:
         last_err = None
         for attempt in range(1, max_attempts + 1):
             try:
-                results = vector_store.similarity_search_with_score(user_question, k=3)
+                results = current_vector_store.similarity_search_with_score(user_question, k=3)
                 break
             except Exception as e:
                 last_err = e

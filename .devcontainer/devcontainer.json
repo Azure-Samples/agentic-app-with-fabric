@@ -1,0 +1,38 @@
+{
+  "name": "AI Banking App - Fabric Agentic",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode",
+  "forwardPorts": [5173, 5001, 5002],
+  "portsAttributes": {
+    "5173": { "label": "Vite Frontend", "onAutoForward": "notify" },
+    "5001": { "label": "Banking API", "onAutoForward": "notify" },
+    "5002": { "label": "Analytics API", "onAutoForward": "notify" }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.azure-account"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/agentic-app-with-fabric/.venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "editor.formatOnSave": true
+      }
+    }
+  },
+  "remoteEnv": {
+    "FLASK_ENV": "development",
+    "NVM_DIR": "/usr/local/share/nvm",
+    "PATH": "/usr/local/share/nvm/current/bin:${containerEnv:PATH}"
+  }
+}

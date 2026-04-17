@@ -8,6 +8,31 @@ import time
 
 load_dotenv(override=True)
 
+TRANSIENT_ODBC_PREFIXES = ("08001", "08S01")
+CONNECT_RETRY_DELAYS_SECONDS = (2, 5, 10, 15, 20)
+
+
+def _is_transient_connection_error(error: Exception) -> bool:
+    error_text = str(error)
+    return any(code in error_text for code in TRANSIENT_ODBC_PREFIXES)
+
+
+def _connect_with_retries(conn_str: str, **connect_kwargs):
+    last_error = None
+    for attempt, delay_seconds in enumerate(CONNECT_RETRY_DELAYS_SECONDS, start=1):
+        try:
+            return pyodbc.connect(conn_str, **connect_kwargs)
+        except pyodbc.Error as error:
+            last_error = error
+            if not _is_transient_connection_error(error) or attempt == len(CONNECT_RETRY_DELAYS_SECONDS):
+                raise
+            print(
+                f"[db_connect] Transient SQL connection failure on attempt {attempt}/"
+                f"{len(CONNECT_RETRY_DELAYS_SECONDS)}. Retrying in {delay_seconds}s..."
+            )
+            time.sleep(delay_seconds)
+    raise last_error
+
 def fabricsql_connection_agentic_db():
     """
     Create connection for database.
@@ -22,7 +47,7 @@ def fabricsql_connection_agentic_db():
         try:
             # Try to connect with the connection string as-is
             # This works for both Managed Identity (Azure) and SQL Auth (local)
-            return pyodbc.connect(conn_str, timeout=30)
+            return _connect_with_retries(conn_str, timeout=120)
         except pyodbc.Error as e:
             # If it fails and contains MSI-related error, provide helpful message
             error_msg = str(e)
@@ -49,7 +74,11 @@ def fabricsql_connection_agentic_db():
             
             # Connect with access token
             SQL_COPT_SS_ACCESS_TOKEN = 1256
-            return pyodbc.connect(conn_str_clean, attrs_before={SQL_COPT_SS_ACCESS_TOKEN: token_struct}, timeout=30)
+            return _connect_with_retries(
+                conn_str_clean,
+                attrs_before={SQL_COPT_SS_ACCESS_TOKEN: token_struct},
+                timeout=120,
+            )
         except pyodbc.Error as e:
             raise RuntimeError(f"Failed to connect using access token: {e}") from e
         
