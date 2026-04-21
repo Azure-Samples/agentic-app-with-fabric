@@ -27,6 +27,7 @@ Thumbs.db
 # Environment files (you might want to keep .env.example)
 .env
 .env.local
+*.env-old
 
 # Log files
 logs/

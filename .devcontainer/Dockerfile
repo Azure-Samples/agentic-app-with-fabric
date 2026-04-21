@@ -31,4 +31,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         rm -rf /var/lib/apt/lists/* \
     "
 
+# Pre-install Python packages so post-create.sh doesn't have to download them.
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir --prefer-binary -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt
+
 RUN su vscode -c "bash -lc 'source /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} && nvm alias default ${NODE_VERSION} && nvm use default'"

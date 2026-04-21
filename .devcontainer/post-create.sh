@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "=== Installing Python dependencies ==="
 if [ ! -x .venv/bin/python ]; then
-  python3 -m venv .venv
+  python3 -m venv --system-site-packages .venv
 fi
 . .venv/bin/activate
 requirements_hash=$(sha256sum requirements.txt | awk '{print $1}')

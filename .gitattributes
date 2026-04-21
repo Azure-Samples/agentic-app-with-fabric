@@ -1,0 +1,4 @@
+# Force LF line endings for files that break with CRLF
+*.sh text eol=lf
+Dockerfile text eol=lf
+.gitattributes text eol=lf

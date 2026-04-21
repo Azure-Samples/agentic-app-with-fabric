@@ -1,62 +1,62 @@
 {
-  "workspace_id": "92a92997-3f4a-4ccb-a2cb-9d830eeed6e3",
+  "workspace_id": "fe1b290c-576d-4a4e-bc33-d0b2d3bd6663",
   "agentic_app_db": {
-    "itemId": "f81910db-7701-4b7d-9ed7-21d8b0324c9e",
+    "itemId": "1e840aae-a564-4def-9520-56440f229f1c",
     "type": "SQLDatabase",
     "logicalId": "35fad3ec-f95a-87e5-435e-e81d13cb5ae1"
   },
   "agentic_cosmos_db": {
-    "itemId": "87ee75b4-8540-4ca9-9a3f-53167d7d06af",
+    "itemId": "8ecc9622-cce9-4547-b7cf-3d3f2a025b6f",
     "type": "CosmosDBDatabase",
     "logicalId": "87fcaa33-7ad6-b4ca-4394-25e7ce7118b7"
   },
   "agentic_lake": {
-    "itemId": "2dd1e070-3c3d-49b5-8d3a-eaa09ece2e47",
+    "itemId": "3664315b-4155-4ad8-b886-40137b0eb8f0",
     "type": "Lakehouse",
     "logicalId": "fb30712b-d7a8-a06a-4004-373442ecab99"
   },
   "banking_semantic_model": {
-    "itemId": "c8b796ad-72a2-430a-89cd-b7eafdde021f",
+    "itemId": "3ec03e22-40e7-4bf9-bedb-c0bb0488c64a",
     "type": "SemanticModel",
     "logicalId": "c1a22701-9f6d-b640-4e9c-8d1ac4aeec57"
   },
   "Agentic_Insights": {
-    "itemId": "029361e8-e7d0-4a56-9d5a-054a01a53941",
+    "itemId": "a94bc59c-5bdd-4cd1-a4b2-56ec7d84c844",
     "type": "Report",
     "logicalId": "b4cc5129-4df8-8b4e-4df5-0e83f3a01efb"
   },
   "Banking_DataAgent": {
-    "itemId": "67134683-f907-4273-a3c7-763381aa4611",
+    "itemId": "db47affe-db68-4be4-b99e-76a60d5e07c7",
     "type": "DataAgent",
     "logicalId": "3be97f14-70a3-80eb-48bb-96c6e3600c29"
   },
   "AgenticEventHouse": {
-    "itemId": "81e193c7-efae-4b4f-8496-2bc863a3354c",
+    "itemId": "08e709c8-3591-4dd6-8f45-3459a7ed311f",
     "type": "Eventhouse",
     "logicalId": "51e669b7-3c9a-bcad-444b-9003b479cd41"
   },
   "app_events": {
-    "itemId": "05b56490-f0b7-45df-bda1-fcba9db7f256",
+    "itemId": "3057395b-f2b7-4653-bde8-e9e8b5427539",
     "type": "KQLDatabase",
     "logicalId": "b5524f9b-9b13-84b0-4931-d533ccff02c9"
   },
   "agentic_stream": {
-    "itemId": "295569c4-2cc4-43c6-ba5a-3719943f4971",
+    "itemId": "8dbf0ae2-383f-4b45-9cc5-cb3ed8f858e5",
     "type": "Eventstream",
     "logicalId": "b43b90ba-f1e3-843b-4a09-80ea104eee0d"
   },
   "ContentSafetyMonitoring": {
-    "itemId": "791b0137-b4cc-43f1-bb22-430cf9d51cd8",
+    "itemId": "2bb658a0-944a-4f7a-b015-79eeb1691a6f",
     "type": "KQLDashboard",
     "logicalId": "e192cca9-882d-bfce-4689-14d6fe8e92ca"
   },
   "QueryWorkBench": {
-    "itemId": "1c658d53-d532-4ceb-a917-7d26f734eb92",
+    "itemId": "69dafe68-f46e-4221-be31-6dca086f6fed",
     "type": "KQLQueryset",
     "logicalId": "1c1fcf8e-a488-804c-4cd4-0a116ba12b46"
   },
   "QA_Evaluation_Notebook": {
-    "itemId": "fdfc0826-17b1-4681-8822-b5fb6e735ca5",
+    "itemId": "89be0f5a-5451-46f4-a734-41381f67bcd5",
     "type": "Notebook",
     "logicalId": "fb6eb403-7f69-b029-4042-3791852c6b3c"
   }
