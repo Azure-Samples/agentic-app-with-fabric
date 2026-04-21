@@ -32,18 +32,26 @@ An interactive banking demo that shows how databases power **OLTP**, **OLAP**, a
 
 ### Prerequisites
 
-Before you begin, install the following:
+Before you begin, make sure you have the following:
 
 | Requirement | Notes |
 |---|---|
-| [Node.js](https://nodejs.org/) v18+ | Frontend |
-| [Python](https://www.python.org/) 3.11.9+ | Backend |
-| [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) | Auth — [Windows](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows) · [macOS](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos) |
-| [ODBC Driver 18 for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server) | Database connectivity |
+| [VS Code](https://code.visualstudio.com/) | Recommended; tested environment |
+| [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) | Required to use the included Dev Container in VS Code |
+| Docker Desktop / Docker Engine | Required to use the included Dev Container |
+| [Node.js](https://nodejs.org/) v18+ | Frontend. Skip this install when using the Dev Container; it already includes Node.js 20.19.0 |
+| [Python](https://www.python.org/) 3.11.9+ | Backend. Skip this install when using the Dev Container; it already includes Python 3.11 |
+| [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) | Auth. Skip this install when using the Dev Container; it already includes Azure CLI. [Windows](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows) · [macOS](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos) |
+| [ODBC Driver 18 for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server) | Database connectivity. Skip this install when using the Dev Container; it already includes ODBC Driver 18 |
 | Microsoft Fabric capacity | [Start a free 60-day trial](https://learn.microsoft.com/en-us/fabric/fundamentals/fabric-trial) if needed |
 | Azure OpenAI resource | [Create one in Azure Portal](https://azure.microsoft.com/en-us/products/ai-services/openai-service) |
 
 > **Recommended:** VS Code (tested environment)
+
+> **Using the included VS Code Dev Container?** After cloning the repo, open this folder in VS Code and run `Dev Containers: Reopen in Container`. During container setup, `.devcontainer/post-create.sh` creates `.venv`, runs `pip install -r requirements.txt` when `requirements.txt` changes, runs `npm install`, copies `backend/.env.sample` to `backend/.env` if needed, and the container forwards ports `5173`, `5001`, and `5002`.
+
+> The Dev Container also installs these VS Code extensions automatically: Python, Pylance, ESLint, Prettier, Tailwind CSS, Docker, and Azure Account. Continue with Step 4 after the container setup finishes. 
+IF YOU ARE USING DEV CONTAINERS DO NOT PERFORM `pip install` and `npm install`
 
 ---
 
@@ -59,9 +67,13 @@ git clone https://github.com/Azure-Samples/agentic-app-with-fabric.git
 cd agentic-app-with-fabric
 ```
 
+If you are using the Dev Container, open this folder in VS Code and run `Dev Containers: Reopen in Container`. After the container setup finishes, continue with Step 4.
+
 ---
 
 ### Step 2 — Install Python Dependencies
+
+If you are using the Dev Container, skip this step. `.devcontainer/post-create.sh` already creates `.venv` and runs `pip install -r requirements.txt` automatically when `requirements.txt` changes.
 
 ```bash
 # Create and activate a virtual environment
@@ -81,6 +93,8 @@ pip install -r requirements.txt
 
 ### Step 3 — Install Frontend Dependencies
 
+If you are using the Dev Container, skip this step. `.devcontainer/post-create.sh` already runs `npm install`.
+
 ```bash
 npm install
 ```
@@ -88,6 +102,8 @@ npm install
 ---
 
 ### Step 4 — Log in to Azure
+
+If you are using the Dev Container, run this in a VS Code terminal attached to the container.
 
 ```bash
 az login
@@ -206,7 +222,7 @@ COSMOS_DB_DATABASE_NAME             # Set to "agentic_cosmos_db"
 
 ### Step 8 — Run the App
 
-Open **two terminal windows** (both with the virtual environment activated and after `az login`):
+Open **two terminal windows** (both after `az login`; in the Dev Container, VS Code activates `.venv` automatically):
 
 **Terminal 1 — Backend**
 
@@ -231,6 +247,8 @@ npm run dev
 ```
 
 Opens the app at → [http://localhost:5173](http://localhost:5173)
+
+If you are using the Dev Container, VS Code forwards ports `5173`, `5001`, and `5002` automatically when these services start.
 
 
 
