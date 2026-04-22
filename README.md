@@ -14,7 +14,7 @@ An interactive banking demo that shows how databases power **OLTP**, **OLAP**, a
 |---|---|
 | 🚀 [Setup Guide](#-setup-guide) | Get the app running locally |
 | ⚗️ [Explore Fabric Workloads](docs/EXPLORE.md) | RTI, Power BI, Data Agent walkthroughs |
-| 🧑‍💻 [Learn More](docs/LEARN.md) | Architecture, agents, embeddings, contributing |
+| 🧑‍💻 [Learn More & Contribute!](docs/LEARN.md) | Architecture, agents, embeddings, contributing |
 
 ---
 
