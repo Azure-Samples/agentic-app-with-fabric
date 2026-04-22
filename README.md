@@ -32,25 +32,22 @@ An interactive banking demo that shows how databases power **OLTP**, **OLAP**, a
 
 ### Prerequisites
 
-Before you begin, install the following:
+**IMPORTANT**: Before you begin, install the following:
 
 | Requirement | Notes |
 |---|---|
-| [Node.js](https://nodejs.org/) v18+ | Frontend |
-| [Python](https://www.python.org/) 3.11.9+ | Backend |
-| [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) | Auth — [Windows](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows) · [macOS](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos) |
-| [ODBC Driver 18 for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server) | Database connectivity |
-| Microsoft Fabric capacity | [Start a free 60-day trial](https://learn.microsoft.com/en-us/fabric/fundamentals/fabric-trial) if needed |
-| Azure OpenAI resource | [Create one in Azure Portal](https://azure.microsoft.com/en-us/products/ai-services/openai-service) |
-
-> **Recommended:** VS Code (tested environment)
-
+| [VS Code](https://code.visualstudio.com/) | Recommended; tested environment |
+| [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) | Required to use the included Dev Container in VS Code |
+| Docker Desktop / Docker Engine | Required to use the included Dev Container |
+| [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) | Auth. -  [Windows](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows) · [macOS](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos) |
+| [Node.js](https://nodejs.org/) v18+ | Frontend. **Skip this install when using the Dev Container**; it already includes Node.js 20.19.0 |
+| [Python](https://www.python.org/) 3.11.9+ | Backend. **Skip this install when using the Dev Container**; it already includes Python 3.11 |
+| [ODBC Driver 18 for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server) | Database connectivity. **Skip this install when using the Dev Container**; it already includes ODBC Driver 18 |
+| Microsoft Fabric capacity | [Start a free 60-day trial](https://learn.microsoft.com/en-us/fabric/fundamentals/fabric-trial) if needed. NOTE: Data Agent is not available in Free Trial |
+| Azure OpenAI resource | [Create one in Azure Portal](https://azure.microsoft.com/en-us/products/ai-services/openai-service) - Deploy an llm model (ex. gpt 4.1) and **text-embedding-ada-002** embedding model |
 ---
 
-### Quick Setup Video
-
-[![Watch the Setup Demo](./assets/video_play.png)](https://youtu.be/svxQccXyreM)
----
+## Setup with dev container
 
 ### Step 1 — Clone the Repo
 
@@ -59,35 +56,13 @@ git clone https://github.com/Azure-Samples/agentic-app-with-fabric.git
 cd agentic-app-with-fabric
 ```
 
----
+### Step 2 - Run the Dev Container
+Open the main folder in VS Code and run `Dev Containers: Rebuild and Reopen in Container` in the quick access bar. During container setup, `.devcontainer/post-create.sh` creates `.venv`, runs `pip install -r requirements.txt` when `requirements.txt` changes, runs `npm install`, copies `backend/.env.sample` to `backend/.env` if needed, and the container forwards ports `5173`, `5001`, and `5002`
 
-### Step 2 — Install Python Dependencies
 
-```bash
-# Create and activate a virtual environment
-# Windows: 
-python -m venv venv
-.\venv\Scripts\activate
+⚠️**Facing Issues with Dev container Setup?** Follow steps here instead to install dependencies on your system: [Manual Setup](./docs/MANUAL_SETUP.md)
 
-# macOS / Linux: 
-python3 -m venv venv
-source venv/bin/activate
-
-# Install packages
-pip install -r requirements.txt
-```
-
----
-
-### Step 3 — Install Frontend Dependencies
-
-```bash
-npm install
-```
-
----
-
-### Step 4 — Log in to Azure
+### Step 3 — Log in to Azure
 
 ```bash
 az login
@@ -99,7 +74,7 @@ Use your Microsoft Fabric account credentials. Watch for browser pop-ups.
 
 ---
 
-### Step 5 — Deploy the Fabric Workspace
+### Step 4 — Deploy the Fabric Workspace
 
 This single command creates the workspace, deploys all Fabric artifacts, creates SQL tables, and populates `backend/.env` with connection strings automatically.
 
@@ -128,11 +103,11 @@ The script will prompt you to select a Fabric capacity, then create a workspace 
 | ContentSafetyMonitoring | KQL Dashboard |
 | QA_Evaluation_Notebook | Notebook |
 
-> 💡 **Alternative deployment:** prefer Git integration? See [Deploy via Git Integration](git_integration_deployment.md).
+> 💡 **Alternative deployment of Fabric artifacts:** prefer Git integration? See [Deploy via Git Integration](git_integration_deployment.md).
 
 ---
 
-### Step 6 — Finalize the Deployment
+### Step 5 — Finalize the Deployment
 
 After `setup_workspace.py` completes, run:
 
@@ -152,7 +127,7 @@ When done, your workspace lineage should look like this:
 
 ---
 
-### Step 7 — Configure Environment Variables
+### Step 6 — Configure Environment Variables
 
 `setup_workspace.py` already auto-populated some of `backend/.env`. You only need to fill in the **Azure OpenAI** values, **Cosmos DB Endpoint** and **EventHub** connection details.
 
@@ -198,13 +173,13 @@ The following were written to `.env` automatically by the deployment script:
 FABRIC_SQL_CONNECTION_URL_AGENTIC   # SQL Database connection string
 FABRIC_DATA_AGENT_SERVER_URL        # Data Agent MCP endpoint
 FABRIC_DATA_AGENT_TOOL_NAME         # Data Agent tool name
-USE_FABRIC_DATA_AGENT               # Set to "true"
+USE_FABRIC_DATA_AGENT               # default is false
 COSMOS_DB_DATABASE_NAME             # Set to "agentic_cosmos_db"
 ```
 
 ---
 
-### Step 8 — Run the App
+### Step 7 — Run the App
 
 Open **two terminal windows** (both with the virtual environment activated and after `az login`):
 
