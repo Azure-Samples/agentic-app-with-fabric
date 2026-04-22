@@ -21,6 +21,7 @@ CREATE TABLE [dbo].[chat_history] (
     [finish_reason]          VARCHAR (255)  NULL,
     [response_time_ms]       INT            NULL,
     [trace_end]              DATETIME2 (7)  DEFAULT (getdate()) NULL,
+    [estimated_cost_usd]     DECIMAL (10, 6) NULL,
     PRIMARY KEY CLUSTERED ([message_id] ASC)
 );
 

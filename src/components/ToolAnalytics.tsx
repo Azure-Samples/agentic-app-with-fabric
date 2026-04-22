@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AnalyticsAPI } from '../services/analyticsApi';
 import type { ChatSession } from '../types/analytics';
 import { Calendar, MessageSquare, Download, Trash2, Plus } from 'lucide-react';
+import CostInsights from './CostInsights';
 
 const ChatSessions: React.FC = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -73,6 +74,8 @@ const ChatSessions: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <CostInsights />
+
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Chat Sessions</h2>
         <button

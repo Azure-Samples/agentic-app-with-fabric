@@ -4,6 +4,7 @@ import os
 from flask import jsonify
 from shared.utils import _serialize_messages, _to_json_primitive
 from shared.utils import get_user_id
+from shared.pricing import estimate_cost
 
 # Global variables that will be set by the main app
 db = None
@@ -260,6 +261,7 @@ def init_chat_db(database):
         total_tokens = db.Column(db.Integer)
         completion_tokens = db.Column(db.Integer)
         prompt_tokens = db.Column(db.Integer)
+        estimated_cost_usd = db.Column(db.Numeric(10, 6))  # populated from pricing.estimate_cost; null if tokens or model unknown
 
         tool_id = db.Column(db.String(255))
         tool_name = db.Column(db.String(255))
@@ -517,6 +519,11 @@ def init_chat_db(database):
                 total_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
                 completion_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
                 prompt_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                estimated_cost_usd=estimate_cost(
+                    message.get("response_metadata", {}).get('model_name'),
+                    message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                    message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
+                ),
                 model_name=message.get("response_metadata", {}).get('model_name'),
                 content_filter_results=message.get("response_metadata", {}).get("prompt_filter_results", [{}])[0].get("content_filter_results"),
                 finish_reason=message.get("response_metadata", {}).get("finish_reason"),
@@ -601,6 +608,11 @@ def init_chat_db(database):
                 total_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
                 completion_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
                 prompt_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                estimated_cost_usd=estimate_cost(
+                    message.get("response_metadata", {}).get('model_name'),
+                    message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                    message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
+                ),
                 tool_input=tool_input,
                 model_name=message.get("response_metadata", {}).get('model_name'),
                 content_filter_results=message.get("response_metadata", {}).get("prompt_filter_results", [{}])[0].get("content_filter_results"),
@@ -777,6 +789,50 @@ def init_chat_db(database):
     globals()['ToolDefinition'] = ToolDefinition
     globals()['ChatHistoryManager'] = ChatHistoryManager
     globals()['AgentTrace'] = AgentTrace
+
+
+def ensure_chat_history_columns(database):
+    """Add chat_history columns that exist in the ORM model but may be missing
+    from an older deployed schema. Safe to call on every startup: each ALTER is
+    guarded by an existence check and any error is logged without raising.
+
+    Currently covers:
+      - ``estimated_cost_usd DECIMAL(10, 6)`` (added 2026-04; previously cost
+        was computed on the fly at query time).
+    """
+    # Column definitions: (column_name, SQL Server type, SQLite fallback type).
+    columns = [
+        ("estimated_cost_usd", "DECIMAL(10, 6) NULL", "NUMERIC(10, 6) NULL"),
+    ]
+
+    try:
+        from sqlalchemy import inspect
+        engine = database.engine
+        inspector = inspect(engine)
+        existing = {col["name"] for col in inspector.get_columns("chat_history")}
+    except Exception as e:
+        print(f"[chat_data_model.ensure_chat_history_columns] inspector failed: {e}")
+        return
+
+    dialect = engine.dialect.name.lower() if hasattr(engine, "dialect") else ""
+    for name, mssql_type, sqlite_type in columns:
+        if name in existing:
+            continue
+        col_type = sqlite_type if dialect == "sqlite" else mssql_type
+        try:
+            with engine.begin() as conn:
+                conn.exec_driver_sql(
+                    f"ALTER TABLE chat_history ADD {name} {col_type}"
+                )
+            print(f"[chat_data_model] Added missing column chat_history.{name}")
+        except Exception as e:
+            # Non-fatal: the app still starts; the column is only used for the
+            # optional Cost Insights dashboard. Surface the error and move on.
+            print(
+                f"[chat_data_model.ensure_chat_history_columns] "
+                f"could not add chat_history.{name}: {e}"
+            )
+
 
 def handle_chat_sessions(request):
     """Handle chat sessions GET and POST requests"""

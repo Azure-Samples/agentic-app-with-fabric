@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Dict, Any
 
 from shared.utils import _serialize_messages, _to_json_primitive
+from shared.pricing import estimate_cost
 from langchain_core.messages import BaseMessage
 import os
 from dotenv import load_dotenv
@@ -150,6 +151,11 @@ def log_chat_trace(
                             total_tokens=msg.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
                             completion_tokens=msg.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
                             prompt_tokens=msg.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                            estimated_cost_usd=estimate_cost(
+                                msg.get("response_metadata", {}).get('model_name'),
+                                msg.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                                msg.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
+                            ),
                             tool_input=tool_call.get('function', {}).get("arguments"),
                             model_name=msg.get("response_metadata", {}).get('model_name'),
                             finish_reason=msg.get("response_metadata", {}).get("finish_reason"),
@@ -178,6 +184,11 @@ def log_chat_trace(
                         total_tokens=msg.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
                         completion_tokens=msg.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
                         prompt_tokens=msg.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                        estimated_cost_usd=estimate_cost(
+                            msg.get("response_metadata", {}).get('model_name'),
+                            msg.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                            msg.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
+                        ),
                         model_name=msg.get("response_metadata", {}).get('model_name'),
                         finish_reason=msg.get("response_metadata", {}).get("finish_reason"),
                         response_time_ms=trace_duration_ms,

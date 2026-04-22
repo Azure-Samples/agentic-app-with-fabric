@@ -10,6 +10,30 @@ import type {
 // Analytics API runs on port 5002
 import { ANALYTICS_API_URL } from '../apiConfig';
 
+export interface CostSummary {
+  total_prompt_tokens: number
+  total_completion_tokens: number
+  total_tokens: number
+  total_cost_usd: number
+  conversations: number
+  avg_cost_per_conversation: number
+  by_agent: Array<{ agent_name: string; cost_usd: number; percent: number }>
+  by_model: Array<{ model_name: string; cost_usd: number }>
+}
+
+export interface TraceCost {
+  trace_id: string
+  total_cost_usd: number
+  per_step: Array<{
+    agent_name: string
+    prompt_tokens: number
+    completion_tokens: number
+    total_tokens: number
+    cost_usd: number
+    model_name: string | null
+  }>
+}
+
 export class AnalyticsAPI {
   // Chat Sessions
   static async getChatSessions(): Promise<ChatSession[]> {
@@ -144,6 +168,32 @@ export class AnalyticsAPI {
       }
     } catch (error) {
       console.error('Error clearing session:', error);
+      throw error;
+    }
+  }
+
+  static async getCostSummary(days: number = 7): Promise<CostSummary> {
+    try {
+      const response = await fetch(`${ANALYTICS_API_URL}/analytics/cost-summary?days=${days}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch cost summary: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching cost summary:', error);
+      throw error;
+    }
+  }
+
+  static async getTraceCost(traceId: string): Promise<TraceCost> {
+    try {
+      const response = await fetch(`${ANALYTICS_API_URL}/analytics/trace/${encodeURIComponent(traceId)}/cost`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch trace cost: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching trace cost:', error);
       throw error;
     }
   }
