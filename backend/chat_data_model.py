@@ -4,6 +4,7 @@ import os
 from flask import jsonify
 from shared.utils import _serialize_messages, _to_json_primitive
 from shared.utils import get_user_id
+from shared.pricing import estimate_cost
 
 # Global variables that will be set by the main app
 db = None
@@ -260,6 +261,7 @@ def init_chat_db(database):
         total_tokens = db.Column(db.Integer)
         completion_tokens = db.Column(db.Integer)
         prompt_tokens = db.Column(db.Integer)
+        estimated_cost_usd = db.Column(db.Numeric(10, 6))  # populated from pricing.estimate_cost; null if tokens or model unknown
 
         tool_id = db.Column(db.String(255))
         tool_name = db.Column(db.String(255))
@@ -517,6 +519,11 @@ def init_chat_db(database):
                 total_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
                 completion_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
                 prompt_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                estimated_cost_usd=estimate_cost(
+                    message.get("response_metadata", {}).get('model_name'),
+                    message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                    message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
+                ),
                 model_name=message.get("response_metadata", {}).get('model_name'),
                 content_filter_results=message.get("response_metadata", {}).get("prompt_filter_results", [{}])[0].get("content_filter_results"),
                 finish_reason=message.get("response_metadata", {}).get("finish_reason"),
@@ -601,6 +608,11 @@ def init_chat_db(database):
                 total_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('total_tokens'),
                 completion_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
                 prompt_tokens=message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                estimated_cost_usd=estimate_cost(
+                    message.get("response_metadata", {}).get('model_name'),
+                    message.get("response_metadata", {}).get("token_usage", {}).get('prompt_tokens'),
+                    message.get("response_metadata", {}).get("token_usage", {}).get('completion_tokens'),
+                ),
                 tool_input=tool_input,
                 model_name=message.get("response_metadata", {}).get('model_name'),
                 content_filter_results=message.get("response_metadata", {}).get("prompt_filter_results", [{}])[0].get("content_filter_results"),

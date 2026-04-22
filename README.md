@@ -25,6 +25,7 @@ An interactive banking demo that shows how databases power **OLTP**, **OLAP**, a
 - **AI Agents** — multi-agent LangGraph system with a coordinator, support, account, Fabric Data Agent (optional), and visualization agent
 - **Generative UI** — agents create personalized interactive visualizations on the fly
 - **Real-time Monitoring** — app usage and content safety data streamed to Fabric Eventhouse via Eventstream
+- **Cost insights** - per-agent token cost breakdown in the analytics tab; override model pricing via .env
 
 ---
 

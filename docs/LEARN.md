@@ -179,6 +179,22 @@ Each module has its own README with step-by-step instructions.
 
 ---
 
+## 💰 Cost Tracking
+
+Every agent invocation records `prompt_tokens`, `completion_tokens`, `model_name`, and `estimated_cost_usd` on the `chat_history` table. The frontend's **Cost Insights** card in the Chat Sessions view shows per-agent and per-model cost breakdowns for the last 7 days.
+
+### Adjusting pricing
+
+Default Azure OpenAI rates live at [`backend/shared/pricing.py`](../backend/shared/pricing.py). Override per-deployment rates by setting `AZURE_OPENAI_MODEL_PRICING_JSON` in `backend/.env`:
+
+```dotenv
+AZURE_OPENAI_MODEL_PRICING_JSON={"gpt-4o-mini": {"prompt": 0.00015, "completion": 0.0006}}
+```
+
+Rates are USD per 1K tokens. Unknown models fall back to `$0.00` (cost is treated as unavailable, not free).
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Here's how:

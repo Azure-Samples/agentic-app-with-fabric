@@ -36,7 +36,10 @@ from chat_data_model import (
     clear_chat_history, clear_session_data, initialize_tool_definitions,
     initialize_agent_definitions
 )
+from cost_analytics import cost_analytics_bp
 import cosmos_chat_model
+
+app.register_blueprint(cost_analytics_bp)
 
 # Chat History API Routes
 @app.route('/api/chat/sessions', methods=['GET', 'POST'])
