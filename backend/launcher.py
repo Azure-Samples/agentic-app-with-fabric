@@ -41,10 +41,12 @@ def run_combined_services():
         import agent_analytics
         
         # Initialize databases for both apps
+        from chat_data_model import ensure_chat_history_columns
         with banking_app.app.app_context():
             banking_app.db.create_all()
+            ensure_chat_history_columns(banking_app.db)
             print("✅ Banking database tables initialized")
-            
+
             # Run data ingestion
             try:
                 from init_data import check_and_ingest_data
@@ -52,9 +54,10 @@ def run_combined_services():
                 print("✅ Data initialization complete")
             except Exception as e:
                 print(f"⚠️ Data initialization warning: {e}")
-        
+
         with agent_analytics.app.app_context():
             agent_analytics.db.create_all()
+            ensure_chat_history_columns(agent_analytics.db)
             agent_analytics.initialize_tool_definitions()
             agent_analytics.initialize_agent_definitions()
             print("✅ Analytics database tables initialized")
