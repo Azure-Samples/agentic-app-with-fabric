@@ -1,62 +1,133 @@
-# Testing Real-time Alerting
+## 📡 Real-Time Monitoring (RTI)
 
-During the app set up process, we already deployed all required Fabric artifacts, including the ones to enable streaming and storing real-time app usage logs. 
+As the app runs, it streams content safety and usage events to Fabric Eventstream → Eventhouse (KQL). Follow these steps to complete the pipeline and enable the real-time dashboard.
 
-While almost all is in place, there are still a few steps remaining to fully set up the end to end process of streaming data and enabling the real-time dashboard for monitoring purposes. 
+### Step 1 — Launch the App and Do at Least One Test Chat 
 
-## Follow below steps to finalize real-time intelligence pipeline in Fabric
+The Eventstream needs at least one data event to infer the incoming schema before you can configure the destination.
 
-### Connect your Eventhouse database to the Eventstream
+Run the app, log in, and send any message in the chat.
 
-1. **Ensure you have done at least one test run with the application.** This enables the streaming pipeline to recognize and map the schema of incoming streaming data.
-2. In your Fabric workspace, open your Eventstream artifact. 
+---
 
-    ![eventstream](../../assets/1.png)
-3. Click on agentic_stream object, click on refresh and ensure there is at least one data entry:
-    ![eventstream](../../assets/eventhub_1.png)
-As you can see in above image, EventHouse is shown as "Unconfigured". Click on "Configure", and follow steps as shown in below images:
+### Step 2 — Connect the Eventhouse to the Eventstream
 
-    ![eventstream](../../assets/conf_1.png)
-    ![eventstream](../../assets/conf2.png)
-    ![eventstream](../../assets/conf3.png)
+1. In your Fabric workspace, open **agentic_stream** (the Eventstream artifact).
 
-4. After Clicking in "Close" in the last step, you willbe back at your EventStream pipeline view. Click on "Edit" on upper right side, then click on "Publish".
+   ![eventstream](../../assets/1.png)
 
-    ![eventstream](../../assets/conf4.png)
-    ![eventstream](../../assets/conf5.png)
+2. Click the **agentic_stream** node → click **Refresh** → confirm at least one row of data is visible.
 
-5. Now to test, run the app and perform a test chat. Then go back to your workspace and open the "app_events" KQL database (middle block). It may take a few minutes and do some refresh for the first time after publishing the changes to start seeing the event data in your database, but it should look like below:
-    ![eventstream](../../assets/kql1.png)
+   ![eventhub data](../../assets/eventhub_1.png)
 
-6. Go back to your workspace view, and now open the "QueryWorkBench" block. We will be using the workbench to write queries for adding to the Real-Time Dashboard. As you can see there are already some example query blocks that you can choose and run. 
-    ![eventstream](../../assets/workbench.png)
-    ![eventstream](../../assets/query1.png)
+3. The Eventhouse destination will show as **Unconfigured**. Click **Configure**, click on **new table** and name it **agentic_events**, then follow below steps to finalize:
+
+   ![configure 1](../../assets/conf_1.png)
+   ![configure 2](../../assets/conf2.png)
+   ![configure 3](../../assets/conf3.png)
+
+4. Click **Close**, then click **Edit** (top right) → **Publish**.
+
+   ![publish 1](../../assets/conf4.png)
+   ![publish 2](../../assets/conf5.png)
+
+---
+
+### Step 3 — Verify Data is Flowing
+
+Send another test chat, then open the **app_events** KQL Database in your workspace. It may take a few minutes on first run.
+
+![kql data](../../assets/kql1.png)
+
+---
+
+### Step 4 — Build the Real-Time Dashboard
+
+1. Open **QueryWorkBench** in your workspace and paste below queries there:
+
+   ```query
+   agentic_events
+
+   | where filter_category startswith "None"
+
+   | extend DateTime = todatetime(timestamp)
+
+   | summarize eventCount = count() by DateTime
+
+    
+
+   agentic_events
+
+   | where filter_category contains "violence"
+
+   | extend DateTime = todatetime(timestamp)
+
+   | summarize eventCount = count() by DateTime, filter_category
+
+   | project DateTime, eventCount, filter_category
+
+    
+
+   agentic_events
+
+   | where filter_category contains "self_harm"
+
+   | extend DateTime = todatetime(timestamp)
+
+   | summarize eventCount = count() by DateTime, filter_category
+
+   | project DateTime, eventCount, filter_category
+
+    
+
+   agentic_events
+
+   | where filter_category contains "hate"
+
+   | extend DateTime = todatetime(timestamp)
+
+   | summarize eventCount = count() by DateTime, filter_category
+
+   | project DateTime, eventCount, filter_category
+
+    
+
+   agentic_events
+
+   | where filter_category contains "jailbreak"
+
+   | extend DateTime = todatetime(timestamp)
+
+   | summarize eventCount = count() by DateTime, filter_category
+
+   | project DateTime, eventCount, filter_category
+
+    
+
+    
+
+   agentic_events
+
+   | summarize total_count = count()
+
+   ```
+2. If you click on any of them and Run, you can see the results.
+
+3. Now is the time to build your first real-time monitoring dashboard. Click on a query of your choice, then click on the "Save to Dashboard" drop down. Since this is a new dashboard, click on **To a new Dashboard** option and choose a name you desire (ex. ContentMonitoring)
+
+   ![dashboard initial](../../assets/new_dash.png):
 
 
-### Add content safety views to the Real-Time Dashboard
 
-In this example exercise, we will be adding the queries to the existing "ContentSafetyMonitoring" dashboard. Below is the initial view you already have which has two blocks, one showing all events per categpory, and the other showing contents that got blocked due to self_harm filter:
+4. Now you can open your dashboard and see the first panel that you just added:
 
-![eventstream](../../assets/dash1.png)
+   ![dashboard initial](../../assets/example_dash.png)
 
-Adding new views to dashboard is easy. Just click on any query block in your QueryWorkBench, and add it as a view to the existing ContentSafetyMonitoring dashboard as shown below: 
+   You can click on edit and modify the name, type of visualization, etc.
 
-![eventstream](../../assets/dash2.png)
-
-![eventstream](../../assets/dash3.png)
-
-When a new view is added, it will look something like below:
-
-![eventstream](../../assets/dash4.png)
+5. You can follow the same approach and add other queries to the same dashboard (or  a new one, if you desire.)
 
 
-You can edit the name, visualization type, etc. by going to the edit mode, make your changes and then apply them:
+> 💡 **Test tip:** To simulate sensitive content without triggering real OpenAI filters, type a filter category name (e.g. `violence`, `jailbreak`) directly into the chat.
 
-![eventstream](../../assets/dash5.png)
-
-![eventstream](../../assets/dash6.png)
-
-
-Add all queries to the dashboard. Also feel free to write new queries for other scenarios. 
-
-In the application, we have built in an easy way to mimic sensitive content message log without actually getting blocked by the OpenAI api. To test, when chatting you can simply reply with your desired filter category (ex. violence, jailbreak, etc.).
+---

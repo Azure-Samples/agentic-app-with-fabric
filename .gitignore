@@ -5,6 +5,7 @@ __pycache__/
 
 # Virtual environments
 venv/
+.venv/
 env/
 backend/backend/
 
@@ -26,6 +27,7 @@ Thumbs.db
 # Environment files (you might want to keep .env.example)
 .env
 .env.local
+*.env-old
 
 # Log files
 logs/
