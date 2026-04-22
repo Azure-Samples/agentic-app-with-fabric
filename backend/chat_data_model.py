@@ -790,6 +790,50 @@ def init_chat_db(database):
     globals()['ChatHistoryManager'] = ChatHistoryManager
     globals()['AgentTrace'] = AgentTrace
 
+
+def ensure_chat_history_columns(database):
+    """Add chat_history columns that exist in the ORM model but may be missing
+    from an older deployed schema. Safe to call on every startup: each ALTER is
+    guarded by an existence check and any error is logged without raising.
+
+    Currently covers:
+      - ``estimated_cost_usd DECIMAL(10, 6)`` (added 2026-04; previously cost
+        was computed on the fly at query time).
+    """
+    # Column definitions: (column_name, SQL Server type, SQLite fallback type).
+    columns = [
+        ("estimated_cost_usd", "DECIMAL(10, 6) NULL", "NUMERIC(10, 6) NULL"),
+    ]
+
+    try:
+        from sqlalchemy import inspect
+        engine = database.engine
+        inspector = inspect(engine)
+        existing = {col["name"] for col in inspector.get_columns("chat_history")}
+    except Exception as e:
+        print(f"[chat_data_model.ensure_chat_history_columns] inspector failed: {e}")
+        return
+
+    dialect = engine.dialect.name.lower() if hasattr(engine, "dialect") else ""
+    for name, mssql_type, sqlite_type in columns:
+        if name in existing:
+            continue
+        col_type = sqlite_type if dialect == "sqlite" else mssql_type
+        try:
+            with engine.begin() as conn:
+                conn.exec_driver_sql(
+                    f"ALTER TABLE chat_history ADD {name} {col_type}"
+                )
+            print(f"[chat_data_model] Added missing column chat_history.{name}")
+        except Exception as e:
+            # Non-fatal: the app still starts; the column is only used for the
+            # optional Cost Insights dashboard. Surface the error and move on.
+            print(
+                f"[chat_data_model.ensure_chat_history_columns] "
+                f"could not add chat_history.{name}: {e}"
+            )
+
+
 def handle_chat_sessions(request):
     """Handle chat sessions GET and POST requests"""
     user_id = get_user_id()  # In production, get from auth

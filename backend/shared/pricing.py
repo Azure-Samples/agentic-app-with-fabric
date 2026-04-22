@@ -69,9 +69,9 @@ def estimate_cost(
     try:
         if model_name is None or prompt_tokens is None or completion_tokens is None:
             return 0.0
-        if prompt_tokens == 0 or completion_tokens == 0:
-            return 0.0
         if prompt_tokens < 0 or completion_tokens < 0:
+            return 0.0
+        if prompt_tokens == 0 and completion_tokens == 0:
             return 0.0
 
         normalized_model = _normalize_model_name(model_name)

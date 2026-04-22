@@ -62,3 +62,32 @@ def test_malformed_env_falls_back_to_defaults(monkeypatch):
     cost = module.estimate_cost("gpt-4o-mini", 1000, 500)
     expected = (1000 / 1000) * module.MODEL_PRICING_PER_1K_TOKENS["gpt-4o-mini"]["prompt"] + (500 / 1000) * module.MODEL_PRICING_PER_1K_TOKENS["gpt-4o-mini"]["completion"]
     assert abs(cost - expected) < 0.0001
+
+
+def test_embedding_prompt_only_usage_is_billed():
+    # text-embedding-ada-002 has prompt=0.0001, completion=0.0. A prompt-only
+    # call (completion_tokens=0) must return a non-zero cost.
+    module = _reload_pricing()
+    cost = module.estimate_cost("text-embedding-ada-002", 10_000, 0)
+    # 10_000 prompt tokens / 1000 * 0.0001 = 0.001
+    assert abs(cost - 0.001) < 1e-9
+
+
+def test_prompt_only_chat_call_is_billed():
+    # A chat call that produced a prompt but no completion (stream cutoff,
+    # content filter) still consumed prompt tokens and must be billed.
+    module = _reload_pricing()
+    cost = module.estimate_cost("gpt-4o-mini", 1000, 0)
+    expected = (1000 / 1000) * module.MODEL_PRICING_PER_1K_TOKENS["gpt-4o-mini"]["prompt"]
+    assert abs(cost - expected) < 1e-9
+
+
+def test_zero_on_both_sides_returns_zero():
+    module = _reload_pricing()
+    assert module.estimate_cost("gpt-4o-mini", 0, 0) == 0.0
+
+
+def test_negative_tokens_return_zero():
+    module = _reload_pricing()
+    assert module.estimate_cost("gpt-4o-mini", -1, 100) == 0.0
+    assert module.estimate_cost("gpt-4o-mini", 100, -1) == 0.0

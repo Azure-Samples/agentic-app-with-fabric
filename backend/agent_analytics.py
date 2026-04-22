@@ -34,7 +34,8 @@ from chat_data_model import (
     ToolDefinition, ChatHistoryManager, AgentDefinition, AgentTrace,
     handle_chat_sessions,
     clear_chat_history, clear_session_data, initialize_tool_definitions,
-    initialize_agent_definitions
+    initialize_agent_definitions,
+    ensure_chat_history_columns,
 )
 from cost_analytics import cost_analytics_bp
 import cosmos_chat_model
@@ -257,6 +258,7 @@ def initialize_analytics_app():
     """Initialize analytics app when called from combined launcher."""
     with app.app_context():
         db.create_all()
+        ensure_chat_history_columns(db)
         initialize_tool_definitions()
         initialize_agent_definitions()
         print("[Analytics Service] Database tables initialized")

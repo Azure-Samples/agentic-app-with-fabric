@@ -24,7 +24,7 @@ from langgraph.store.memory import InMemoryStore
 from shared.connection_manager import sqlalchemy_connection_creator
 from tools.database_query import query_database
 from analytics_service import get_chat_history_for_session
-from chat_data_model import init_chat_db
+from chat_data_model import init_chat_db, ensure_chat_history_columns
 
 from chat_data_model import init_chat_db
 from ai_widget_model import init_ai_widget_db
@@ -962,6 +962,7 @@ def initialize_banking_app():
     """Initialize banking app when called from combined launcher."""
     with app.app_context():
         db.create_all()
+        ensure_chat_history_columns(db)
         print("[Banking Service] Database tables initialized")
 
 # ---------- Frontend (React) routes ----------
