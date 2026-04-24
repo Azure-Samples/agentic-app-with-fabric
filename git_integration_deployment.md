@@ -59,10 +59,10 @@ You only need to do below steps one time.
 The initial application data will be automatically populated, if not existing, in the SQL Database when you start the backend application. So you do not need to do any extra steps to ingest data. But for the Power BI reporting layer, we need to add some extra views.
 
 **Add views to the SQL Analytics endpoint**
-- Go to the **SQL analytics** endpoint of your **agentic_lake**:
+- Go to the **SQL analytics** endpoint of your **agentic_lake** and open a **new query window**:
 
     ![lakehouse](assets/lakehouse.png)
-- Go to **Data_Ingest** folder and run all 3 queries that you see in file **views.sql**:
+- In the **GitHub repo**, open **`Data_Ingest/create_views.sql`**, copy all the code, paste it into your lakehouse query window, and run to create **3 new views**:
 
     ![lakehouse](assets/views.png)
 
