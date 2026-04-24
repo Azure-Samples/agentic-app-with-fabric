@@ -57,7 +57,19 @@ cd agentic-app-with-fabric
 ```
 
 ### Step 2 - Run the Dev Container
-Open the main folder in VS Code and run `Dev Containers: Rebuild and Reopen in Container` in the quick access bar. During container setup, `.devcontainer/post-create.sh` creates `.venv`, runs `pip install -r requirements.txt` when `requirements.txt` changes, runs `npm install`, copies `backend/.env.sample` to `backend/.env` if needed, and the container forwards ports `5173`, `5001`, and `5002`
+Open the main folder in VS Code and run `Dev Containers: Rebuild and Reopen in Container` in the quick access bar as shown below (Reminder that you must have Docker installed):
+
+![devc](assets/dev_container_command.png)
+
+ Running this command start the process of seting up the container, during which `.devcontainer/post-create.sh` creates `.venv` virtual environment, runs `pip install -r requirements.txt` and install required Python version and libraries, runs `npm install`, copies `backend/.env.sample` to `backend/.env` if needed, and the container forwards ports `5173`, `5001`, and `5002`
+
+When container setup is complete, you will see below in VS code terminal:
+
+![dev2](assets/container_done.png)
+
+Press enter and you will see below, which means now you are in the container:
+
+![dev3](assets/container_active.png)
 
 
 ⚠️**Facing Issues with Dev container Setup?** Follow steps here instead to install dependencies on your system: [Manual Setup](./docs/MANUAL_SETUP.md)
@@ -103,13 +115,15 @@ The script will prompt you to select a Fabric capacity, then create a workspace 
 | ContentSafetyMonitoring | KQL Dashboard |
 | QA_Evaluation_Notebook | Notebook |
 
+Wait for the script to finish (disregard warnings if you see any), at the end, it will give you a final status of all items that were successfully deployed.
+
 > 💡 **Alternative deployment of Fabric artifacts:** prefer Git integration? See [Deploy via Git Integration](git_integration_deployment.md).
 
 ---
 
 ### Step 5 — Finalize the Deployment
 
-After `setup_workspace.py` completes, run:
+After `setup_workspace.py` completes, wait a minute or two and run:
 
 ```bash
 # Windows:
