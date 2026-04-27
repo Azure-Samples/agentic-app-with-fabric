@@ -74,7 +74,54 @@ Use your Microsoft Fabric account credentials. Watch for browser pop-ups.
 
 ---
 
-### Step 4 — Deploy the Fabric Workspace
+### Step 4 — Preflight Check
+
+Before deploying anything, run the preflight to verify your dev container,
+Azure context, region, Fabric capacity, OpenAI deployments, and tenant
+permissions are all set correctly. This catches 95% of issues up-front instead
+of discovering them halfway through a 10-minute deployment.
+
+**First, set your target region in `backend/.env`** (single source of truth used
+by all scripts):
+
+```bash
+# backend/.env
+AZURE_REGION="swedencentral"            # or eastus2, westeurope, etc.
+AZURE_RESOURCE_GROUP="agentic-app-with-fabric-rg"
+```
+
+Both values come pre-populated in `backend/.env.sample` (copied to `.env` by
+the dev container). Edit `AZURE_REGION` to match where you want your Fabric
+capacity, Cosmos DB, and Azure OpenAI provisioned.
+
+Then run:
+
+```bash
+# Reads AZURE_REGION + AZURE_RESOURCE_GROUP from backend/.env
+python3 scripts/preflight.py
+
+# Override the region for a single run (also persisted back to .env)
+python3 scripts/preflight.py --region eastus2
+
+# Auto-fix: register providers, create RG + Fabric capacity (F4),
+# create Azure OpenAI account + deploy gpt-4o + text-embedding-ada-002,
+# and write AZURE_OPENAI_KEY/ENDPOINT/DEPLOYMENT into backend/.env
+python3 scripts/preflight.py --fix
+
+# Pin a specific OpenAI resource if you have several
+python3 scripts/preflight.py --openai-resource my-aoai
+```
+
+Exit code `0` = ready, exit code `1` = blocking issues found (suggested fixes printed).
+
+> ℹ️ **Region notes:**
+> - **Cosmos DB in Fabric** is unsupported in: `indiawest`, `qatarcentral`, `uaecentral`, `austriaeast`, `chilecentral`, `southcentralus`. In `israelcentral` it's documented as available but the rollout is delayed — preflight will warn and suggest a fallback (`scripts/provision_azure_cosmos.py` provisions a regular Azure Cosmos DB account instead).
+> - **Embedding model** must be `text-embedding-ada-002` (the repo's vector embeddings were generated with it).
+> - **Chat model** preflight cascades through `gpt-4o-mini` → `gpt-4o` → `gpt-4.1-mini` → `gpt-4.1` and stops at the first one that deploys in your region/quota.
+
+---
+
+### Step 5 — Deploy the Fabric Workspace
 
 This single command creates the workspace, deploys all Fabric artifacts, creates SQL tables, and populates `backend/.env` with connection strings automatically.
 
@@ -107,7 +154,7 @@ The script will prompt you to select a Fabric capacity, then create a workspace 
 
 ---
 
-### Step 5 — Finalize the Deployment
+### Step 6 — Finalize the Deployment
 
 After `setup_workspace.py` completes, run:
 
@@ -127,7 +174,7 @@ When done, your workspace lineage should look like this:
 
 ---
 
-### Step 6 — Configure Environment Variables
+### Step 7 — Configure Environment Variables
 
 `setup_workspace.py` already auto-populated some of `backend/.env`. You only need to fill in the **Azure OpenAI** values, **Cosmos DB Endpoint** and **EventHub** connection details.
 
@@ -179,7 +226,7 @@ COSMOS_DB_DATABASE_NAME             # Set to "agentic_cosmos_db"
 
 ---
 
-### Step 7 — Run the App
+### Step 8 — Run the App
 
 Open **two terminal windows** (both with the virtual environment activated and after `az login`):
 
