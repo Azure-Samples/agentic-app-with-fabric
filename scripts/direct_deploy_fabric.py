@@ -923,6 +923,18 @@ class DirectDeployer:
         # ── Update existing item ────────────────────────────────────────────────
         if existing and not self.force:
             item_id = existing["id"]
+            # These item types are created via creationPayload and do not support
+            # PATCH /updateDefinition. Re-running setup would otherwise mark them
+            # as failed even though they are already deployed and functional.
+            if itype in ("Lakehouse", "CosmosDBDatabase") or (
+                itype == "KQLDatabase" and not kql_schema_parts
+            ):
+                info(f"Exists    {itype}: {name}  (id={item_id[:8]}…) — skipping update (not supported for this type)")
+                self._record(artifact, item_id)
+                self.skipped.append(f"{itype}/{name}")
+                if itype == "Lakehouse" and _is_guid(item_id):
+                    self._create_lakehouse_shortcuts(folder, item_id)
+                return True
             info(f"Updating  {itype}: {name}  (id={item_id[:8]}…)")
             # For KQLDatabase updates, use the schema parts (not empty parts)
             update_parts = kql_schema_parts if itype == "KQLDatabase" else parts
@@ -932,9 +944,6 @@ class DirectDeployer:
                 else:
                     info(f"  No definition parts for {name} — skipping update")
                 self._record(artifact, item_id)
-                # Re-create shortcuts on update so they stay in sync
-                if itype == "Lakehouse" and _is_guid(item_id):
-                    self._create_lakehouse_shortcuts(folder, item_id)
                 return True
             except Exception as exc:
                 err(f"Failed to update {itype}/{name}: {exc}")
@@ -977,6 +986,65 @@ class DirectDeployer:
 
             return True
         except Exception as exc:
+            # Idempotency safety net: if the create failed because the item
+            # already exists in the workspace, find it via any of several
+            # lookup strategies and treat as success.
+            #
+            # Required because Fabric's generic /items?type=X listing does not
+            # consistently return CosmosDBDatabase / KQLDatabase items, and the
+            # specialty types have their own dedicated endpoints.
+            type_to_endpoint = {
+                "KQLDatabase":      "kqlDatabases",
+                "CosmosDBDatabase": "cosmosdbDatabases",
+                "Eventstream":      "eventstreams",
+                "Eventhouse":       "eventhouses",
+                "SQLDatabase":      "sqlDatabases",
+                "Lakehouse":        "lakehouses",
+                "DataAgent":        "dataAgents",
+                "SemanticModel":    "semanticModels",
+                "Report":           "reports",
+                "Notebook":         "notebooks",
+                "KQLQueryset":      "kqlQuerysets",
+            }
+            existing_id = None
+            try:
+                for item in self.client.list_items(itype):
+                    if item.get("displayName") == name:
+                        existing_id = item["id"]
+                        break
+            except Exception:
+                pass
+            if not existing_id and itype in type_to_endpoint:
+                try:
+                    r = requests.get(
+                        f"{FABRIC_API}/workspaces/{self.workspace_id}/{type_to_endpoint[itype]}",
+                        headers=self.client._hdrs(), timeout=30,
+                    )
+                    if r.status_code == 200:
+                        for item in r.json().get("value", []):
+                            if item.get("displayName") == name:
+                                existing_id = item.get("id")
+                                break
+                except Exception:
+                    pass
+            if not existing_id:
+                try:
+                    for item in self.client.list_items():
+                        if item.get("displayName") == name and item.get("type") == itype:
+                            existing_id = item["id"]
+                            break
+                except Exception:
+                    pass
+
+            if existing_id and _is_guid(existing_id):
+                warn(f"Create returned error for {itype}/{name} but item already exists "
+                     f"(id={existing_id[:8]}...) - treating as success.")
+                self._record(artifact, existing_id)
+                self.skipped.append(f"{itype}/{name}")
+                if itype == "Lakehouse":
+                    self._create_lakehouse_shortcuts(folder, existing_id)
+                return True
+
             err(f"Failed to create {itype}/{name}: {exc}")
             self.failed.append(f"{itype}/{name}")
             return False

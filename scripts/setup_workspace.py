@@ -805,6 +805,19 @@ class WorkspaceSetup:
         # Need a capacity
         if not self.capacity_id:
             capacities = self.api.list_capacities()
+            # Filter by AZURE_REGION if set (so we don't accidentally deploy
+            # workspace items into a capacity in the wrong region)
+            target_region = (os.getenv("AZURE_REGION") or "").strip().lower().replace(" ", "").replace("-", "")
+            if target_region:
+                def _norm(s): return (s or "").lower().replace(" ", "").replace("-", "")
+                in_region = [c for c in capacities if _norm(c.get("region")) == target_region]
+                if in_region:
+                    if len(in_region) < len(capacities):
+                        info(f"Filtered to {len(in_region)} capacity/ies in region '{target_region}' "
+                             f"(of {len(capacities)} total)")
+                    capacities = in_region
+                else:
+                    warn(f"No capacities in AZURE_REGION='{target_region}' — falling back to all capacities")
             if len(capacities) == 1:
                 self.capacity_id = capacities[0]["id"]
                 ok(f"Auto-selected capacity: {capacities[0].get('displayName')} ({self.capacity_id[:8]}…)")
@@ -1378,12 +1391,24 @@ class WorkspaceSetup:
             print()
 
         # ── Artifact errors ────────────────────────────────────────────────────
-        failed_artifacts = self.deployer.failed if self.deployer else []
+        # Filter out items that the safety net later recovered or that ended up
+        # in the deployed-state file (idempotency: a "failed create" that
+        # actually exists is not a failure).
+        deployed_keys = {
+            f"{m.get('type','?')}/{name}"
+            for name, m in state.items()
+            if isinstance(m, dict) and m.get("itemId")
+        }
+        failed_artifacts = [
+            item for item in (self.deployer.failed if self.deployer else [])
+            if item not in deployed_keys
+        ]
         if failed_artifacts:
             print(f"{R}Artifacts that failed to create ({len(failed_artifacts)}):{X}")
             for item in failed_artifacts:
                 print(f"  {R}✗{X}  {item}")
-            print()
+            print(f"  {Y}Tip:{X} re-run setup_workspace.py — most failures are transient "
+                  f"and the script is idempotent.\n")
 
         print(f"{Y}⚠  Steps remaining:{X}")
         print(f"  {Y}1.{X} Run:  {C}python scripts/finalize_views_and_report.py{X}  to finalize the deployment")

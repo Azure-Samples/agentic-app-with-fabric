@@ -854,6 +854,17 @@ class DirectDeployer:
 
         if existing and not self.force:
             item_id = existing["id"]
+            # These item types are created via creationPayload and do not support
+            # PATCH /updateDefinition. Re-running setup would otherwise mark them
+            # as failed even though they are already deployed and functional.
+            if itype in ("Lakehouse", "KQLDatabase", "CosmosDBDatabase"):
+                info(f"Exists    {itype}: {name}  (id={item_id[:8]}…) — skipping update (not supported for this type)")
+                self._record(artifact, item_id)
+                self.skipped.append(f"{itype}/{name}")
+                # Re-create shortcuts so they stay in sync after re-runs
+                if itype == "Lakehouse" and _is_guid(item_id):
+                    self._create_lakehouse_shortcuts(folder, item_id)
+                return True
             info(f"Updating  {itype}: {name}  (id={item_id[:8]}…)")
             try:
                 if parts:
@@ -861,9 +872,6 @@ class DirectDeployer:
                 else:
                     info(f"  No definition parts for {name} — skipping update")
                 self._record(artifact, item_id)
-                # Re-create shortcuts on update so they stay in sync
-                if itype == "Lakehouse" and _is_guid(item_id):
-                    self._create_lakehouse_shortcuts(folder, item_id)
                 return True
             except Exception as exc:
                 err(f"Failed to update {itype}/{name}: {exc}")
@@ -893,6 +901,21 @@ class DirectDeployer:
 
             return True
         except Exception as exc:
+            # Idempotency safety net: if create failed because the item already
+            # exists, look it up and treat as success.
+            try:
+                for item in self.client.list_items(itype):
+                    if item.get("displayName") == name:
+                        item_id = item["id"]
+                        warn(f"Create returned error for {itype}/{name} but item already exists "
+                             f"(id={item_id[:8]}…) - treating as success.")
+                        self._record(artifact, item_id)
+                        self.skipped.append(f"{itype}/{name}")
+                        if itype == "Lakehouse" and _is_guid(item_id):
+                            self._create_lakehouse_shortcuts(folder, item_id)
+                        return True
+            except Exception as lookup_exc:
+                warn(f"  Post-failure lookup also failed for {itype}/{name}: {lookup_exc}")
             err(f"Failed to create {itype}/{name}: {exc}")
             self.failed.append(f"{itype}/{name}")
             return False
