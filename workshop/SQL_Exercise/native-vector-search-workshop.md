@@ -4,13 +4,13 @@ This guide demonstrates how to implement **Vector Search** directly within a SQL
 
 ## Prerequisites
 
-* **SQL Database** (Fabric SQL Database or Azure SQL Database)
-* **Azure OpenAI Service** resource with:
-    * The `text-embedding-ada-002` model deployed.
-    * The **Endpoint URL** and **API Key**.
-* **Existing Data**: This script assumes you have a source table named `[dbo].[PDF_RawChunks]` containing text data.
+- **SQL Database** (Fabric SQL Database or Azure SQL Database)
+- **Azure OpenAI Service** resource with:
+  - The `text-embedding-ada-002` model deployed.
+  - The **Endpoint URL** and **API Key**.
+- **Existing Data**: This script assumes you have a source table named `[dbo].[PDF_RawChunks]` containing text data.
 
------
+---
 
 ## Step 1: Prepare the Vector Data Table
 
@@ -55,7 +55,7 @@ BEGIN
 END
 
 CREATE DATABASE SCOPED CREDENTIAL [https://XXX.openai.azure.com/]
-WITH IDENTITY = 'HTTPEndpointHeaders', 
+WITH IDENTITY = 'HTTPEndpointHeaders',
 SECRET = '{"api-key": "YOUR_OPENAI_API_KEY_HERE"}';
 GO
 
@@ -68,11 +68,18 @@ GO
 
 We create an `EXTERNAL MODEL` object that acts as a bridge between SQL and the embedding model.
 
-> **⚠️ ACTION REQUIRED:** Update the `location` and `credential` URL to match your Azure OpenAI endpoint.
+> **⚠️ ACTION REQUIRED:** Update the `location` and `credential` URL to match your Azure OpenAI endpoint. Note that LOCATION must use the embedding deployment name you specified in .env: https://{AZURE_OPENAI_ENDPOINT}/openai/deployments/{AZURE_OPENAI_EMBEDDING_DEPLOYMENT}/embeddings?api-version=2024-08-01-preview
 
 ```sql
+
+-- uncomment and run this line if CREATE EXTERNAL MODEL Ada2Embeddings fails
+-- DROP EXTERNAL MODEL Ada2Embeddings;
+
+--
 CREATE EXTERNAL MODEL Ada2Embeddings
-WITH ( 
+WITH (
+      -- note that LOCATION must use the embedding deployment name you specified in .env
+      -- https://{AZURE_OPENAI_ENDPOINT}/openai/deployments/{AZURE_OPENAI_EMBEDDING_DEPLOYMENT}/embeddings?api-version=2024-08-01-preview
       LOCATION = 'https://XXX.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2024-08-01-preview',
       CREDENTIAL = [https://XXX.openai.azure.com/],
       API_FORMAT = 'Azure OpenAI',
@@ -86,7 +93,7 @@ DECLARE @qv VECTOR(1536);
 DROP TABLE IF EXISTS #t;
 CREATE TABLE #t (v VECTOR(1536));
 
-INSERT INTO #t 
+INSERT INTO #t
 SELECT AI_GENERATE_EMBEDDINGS(N'The foundation series by Isaac Asimov' USE MODEL Ada2Embeddings);
 
 SELECT * FROM #t;
@@ -122,7 +129,7 @@ BEGIN
     END
 
     -- MODE 2: Bulk Table Update (Ingestion Mode)
-    -- If no input text is provided, generate embeddings for all table rows 
+    -- If no input text is provided, generate embeddings for all table rows
     -- where the embedding column is currently NULL
     ELSE
     BEGIN
@@ -160,12 +167,12 @@ DECLARE @search_text NVARCHAR(MAX) = 'What are the fees on late Payments on Cred
 DECLARE @search_vector VECTOR(1536);
 
 -- 2. Generate the embedding for the question
-EXEC dbo.GenerateDocsEmbeddings 
-    @inputText = @search_text, 
+EXEC dbo.GenerateDocsEmbeddings
+    @inputText = @search_text,
     @embedding = @search_vector OUTPUT;
 
 -- 3. Find the closest 4 chunks using Cosine Distance
-SELECT TOP(4) 
+SELECT TOP(4)
     p.chunk_text,
     vector_distance('cosine', @search_vector, p.embeddings) AS distance
 FROM [dbo].[PDF_RawChunks_New] p
