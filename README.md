@@ -1,6 +1,6 @@
 # 🏦 Agentic Banking App with Microsoft Fabric
 
-> Last updated: 🟢 2026-04-26 🟢
+> Last updated: 🟢 2026-04-27 🟢
 
 An interactive banking demo that shows how databases power **OLTP**, **OLAP**, and **AI workloads** side-by-side, all wired together through Microsoft Fabric.
 
